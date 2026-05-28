@@ -1,17 +1,19 @@
 ---
-
+import Article from "../layouts/Article.astro";
+import { getCollection } from "astro:content";
+const notes = (await getCollection("notes")).sort(
+  (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
+);
 ---
-
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<Article title="~/notes — home">
+  <h1>Notes</h1>
+  <p>A hello-world Astro site: static notes, math, and interactive islands.</p>
+  <ul>
+    {notes.map((note) => (
+      <li>
+        <a href={`/notes/${note.id}/`}>{note.data.title}</a>
+        {note.data.summary && <> — <span style="color:var(--ink-soft)">{note.data.summary}</span></>}
+      </li>
+    ))}
+  </ul>
+</Article>

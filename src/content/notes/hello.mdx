@@ -1,0 +1,27 @@
+---
+title: "The Damped Harmonic Oscillator"
+date: 2026-05-28
+summary: "A hello-world note: prose, math, and one interactive island."
+---
+
+import DampingPlot from "../../components/DampingPlot.jsx";
+
+This is a plain note. Everything you're reading is ordinary Markdown.
+
+When you want math, write it inline like $E = mc^2$, or as a block:
+
+$$
+m\,\ddot{x} + c\,\dot{x} + k\,x = 0
+$$
+
+Now an interactive widget that breaks out wider than the text and sits
+centered in its box. Drag the slider.
+
+<div class="wide">
+  <div class="center-box">
+    <DampingPlot client:visible />
+  </div>
+</div>
+
+The text snaps back to readable width. You never computed a margin —
+the grid holds the center; the widget just declared `class="wide"`.

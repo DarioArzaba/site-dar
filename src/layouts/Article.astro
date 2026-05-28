@@ -1,0 +1,22 @@
+---
+import "../styles/global.css";
+import "katex/dist/katex.min.css";
+const { title = "Hello Site" } = Astro.props;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+  </head>
+  <body>
+    <header class="site-header">
+      <a href="/">~/notes</a>
+      <nav><a href="/">home</a></nav>
+    </header>
+    <main class="prose-layout">
+      <slot />
+    </main>
+  </body>
+</html>
