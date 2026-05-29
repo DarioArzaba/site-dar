@@ -1,17 +1,125 @@
 ---
 title: "Rust"
 date: 2026-05-29
-summary: "Style test note for Rust and general Markdown rendering."
+summary: "Rust programming language"
 ---
+
+# QuickStart
+
+## Install
+
+```shell title:"Install Rust"
+# Install in Linux
+# rustup is the official rust toolchain installer
+# Installed on $HOME/.cargo/bin or %USERPROFILE%\.cargo\bin
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+# Validate installation (compiler, cargo, doc generator)
+rustc --version
+cargo --version
+rustdoc --version
+
+# Update
+rustup update
+
+# Uninstall
+rustup self uninstall
+
+# If sudo check it did not modify permissions
+sudo chown -R dario:dario /home/dario
+```
+
+Hello World example:
+
+```rust title:"main.rs"
+fn main(){
+	println! ("Hello World");
+}
+```
+
+
+```shell title:"Compile Rust"
+rustc main.rs
+./main
+```
+
+## Cargo 
+
+Cargo is the package manager and build system in Rust:
+
+```shell title:"Hello World with Cargo"
+# This generates a `main.rs` and a `Cargo.toml` config file.
+cargo new hello_world_cargo
+
+# Check if code can compile
+cargo check
+
+# Build the executable (stored in target/debug dir)
+cargo build
+
+# Build and run unoptomized executable
+cargo run
+
+# Build with release, dev, test and bench profile
+# Creates optimized executable (stored in target/release dir)
+cargo build --release
+# Default, same as cargo build
+cargo build --dev
+# Used to build test executables
+cargo build --test
+# Used to create benchmark executables
+# Meaning all fn() have the bench attribute
+cargo build --bench
+```
+
+# Fundamentals
+
+## Variables
+
+Named storage location that maps a symbolic name to a value in memory. The compiler replaces the name with the memory location. Declared with `let`.
+
+```rust title:"main.rs"
+fn main(){
+    let x = 2;
+	println! ("x = {}", x);
+}
+```
+
+In Rust all variables are immutable by default unless explicitly declared as mutable.
+
+```rust title:"main.rs"
+fn main(){
+    let mut x = 2;
+	println! ("x = {}", x);
+	x = 3;
+	println! ("x = {}", x);
+}
+```
+
+## Data Types
+
+Rust is statically typed, data types must be known at compile time. The type can be inferred or explicitly annotated with a colon.
+
+```rust title:"main.rs"
+fn main(){
+    let x:i32 = 2;
+	println! ("x = {}", x);
+}
+```
+
 
 [[Markdown]] is a [[Markup Language|markup language]] for formatting text [^1] and the primary [[File Format|file format]] for [[Obsidian Note|obsidian notes]]. Use this note to test various you can style your notes. 
 
 ---
-# This is a heading 1
+# This is a heading 100
 
 ## This is a heading 2
 
+Some text
+
 ### This is a heading 3
+
+Some further text
 
 #### This is a heading 4
 
@@ -46,8 +154,22 @@ Add a comment with `%% Comment %%`like this: %%This is a markdown comment%%.  Mo
 >   This is a **blockquote** with text in bold and in *Italics*
 > 
 
-- [x] **Task lists**: This is a completed task.
-- [ ] **Task lists**: This is an incomplete task.
+[x] **Task lists**: This is a completed task.
+[ ] **Task lists**: This is an incomplete task.
+
+> This might be a blockquote
+
+Or do i need two lines
+
+> 
+> Is this okay
+
+Maybe now it will work
+
+> Is now this okayu?
+>
+
+Hey no some lists
 
 - **Unordered lists**, by adding a `-`, `*`, or `+` before the text
     - Second list item
@@ -70,7 +192,13 @@ All list types can be **nested** and combined:
             - Other
     - [ ] Task Nested
 
+---
+
 You can fold headings and indented lists. Add a horizontal line with three or more stars `***`, hyphens `---`, or underscore `___` on the same line. They can even have spaces between them.
+
+***
+
+Another line
 
 This is an external **image**:
 

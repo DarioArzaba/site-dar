@@ -16,16 +16,19 @@
   "dependencies": {
     "@astrojs/mdx": "^5.0.6",
     "@astrojs/react": "^5.0.5",
+    "@expressive-code/plugin-line-numbers": "^0.42.0",
     "@fontsource-variable/open-sans": "^5.2.7",
     "@types/react": "^19.2.15",
     "@types/react-dom": "^19.2.3",
     "astro": "^6.3.8",
+    "astro-expressive-code": "^0.42.0",
     "katex": "^0.17.0",
     "open-props": "^1.7.23",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "rehype-katex": "^7.0.1",
-    "remark-math": "^6.0.0"
+    "remark-math": "^6.0.0",
+    "unist-util-visit": "^5.1.0"
   },
   "devDependencies": {
     "wrangler": "^4.95.0"
