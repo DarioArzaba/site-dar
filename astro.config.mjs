@@ -234,21 +234,29 @@ export default defineConfig({
 
       styleOverrides: {
         borderRadius: '8px',
+        // NOTE: EC styleOverrides arrays are [alternateValue, baseValue] = [dark, light]
+        // because codeLight is the base (first) theme and codeDark is the alternate (second).
+        //
+        // borderColor controls --ec-brdCol, used by:
+        //   • pre border (code area — all frames)
+        //   • terminal header top/side border
+        // editorTabBarBorderColor controls the header::before border (top/sides of editor frame).
+        // Both must be the same colour so the border wraps the full block continuously.
+        borderColor: ['#3a3a3a', '#b4bca0'],   // dark: subtle grey | light: sage-green mocha
         codeFontFamily: 'var(--font-mono)',
         codeFontSize: '0.865rem',
         uiLineHeight: '1.6',
         frames: {
-          // NOTE: EC styleOverrides arrays are [alternateValue, baseValue], i.e. [dark, light]
-          // because codeLight is the base (first) theme and codeDark is the alternate (second).
-          editorTabBarBackground:          ['#0d0d0d', '#ece9de'],
-          editorActiveTabBackground:       ['#000000', '#fefdf6'],
-          editorActiveTabBorderColor:      '#a44f8a',           // same for both themes
-          editorActiveTabForeground:       ['#fffcfe', '#282828'],
-          editorTabBarBorderColor:         ['#1a1a1a', '#ccc9bc'],
-          terminalBackground:              ['#000000', '#fefdf6'],
-          terminalTitlebarBackground:      ['#0d0d0d', '#ece9de'],
-          terminalTitlebarForeground:      ['#8a8a8a', '#5e6978'],
-          terminalTitlebarBorderBottomColor: ['#1a1a1a', '#ccc9bc'],
+          editorTabBarBackground:            ['#0d0d0d', '#ece9de'],
+          editorActiveTabBackground:         ['#000000', '#fefdf6'],
+          editorActiveTabBorderColor:        'transparent',     // remove tab's own border
+          editorActiveTabForeground:         ['#fffcfe', '#282828'],
+          editorTabBarBorderColor:           ['#3a3a3a', '#b4bca0'], // must match borderColor
+          editorTabBarBorderBottomColor:     'transparent',    // no divider line between tab and code
+          terminalBackground:                ['#000000', '#fefdf6'],
+          terminalTitlebarBackground:        ['#0d0d0d', '#ece9de'],
+          terminalTitlebarForeground:        ['#8a8a8a', '#5e6978'],
+          terminalTitlebarBorderBottomColor: ['#3a3a3a', '#b4bca0'], // match outer border
         },
       },
     }),
