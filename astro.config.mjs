@@ -11,5 +11,12 @@ export default defineConfig({
   markdown: {
     remarkPlugins: [remarkMath],
     rehypePlugins: [rehypeKatex],
-  }
+  },
+  vite: {
+    optimizeDeps: {
+      // Ensure React's dev-mode JSX runtime is pre-bundled so jsxDEV is
+      // always available when Vite serves component islands in development.
+      include: ['react/jsx-dev-runtime'],
+    },
+  },
 });

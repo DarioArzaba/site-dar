@@ -16,6 +16,7 @@
   "dependencies": {
     "@astrojs/mdx": "^5.0.6",
     "@astrojs/react": "^5.0.5",
+    "@fontsource-variable/open-sans": "^5.2.7",
     "@types/react": "^19.2.15",
     "@types/react-dom": "^19.2.3",
     "astro": "^6.3.8",
