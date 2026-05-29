@@ -1,7 +1,8 @@
 ---
 import "../styles/global.css";
 import "katex/dist/katex.min.css";
-const { title = "Hello Site" } = Astro.props;
+import NavBar from "../components/NavBar.astro";
+const { title = "The Hearth of Dev" } = Astro.props;
 ---
 <!doctype html>
 <html lang="en">
@@ -9,12 +10,16 @@ const { title = "Hello Site" } = Astro.props;
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
+    <script is:inline>
+      (function () {
+        var stored = localStorage.getItem('theme');
+        var sys = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', stored || sys);
+      })();
+    </script>
   </head>
   <body>
-    <header class="site-header">
-      <a href="/">~/notes</a>
-      <nav><a href="/">home</a></nav>
-    </header>
+    <NavBar />
     <main class="prose-layout">
       <slot />
     </main>

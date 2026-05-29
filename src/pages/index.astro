@@ -1,19 +1,124 @@
 ---
 import Article from "../layouts/Article.astro";
-import { getCollection } from "astro:content";
-const notes = (await getCollection("notes")).sort(
-  (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
-);
+import { categories } from "../data/categories";
 ---
-<Article title="~/notes — home">
-  <h1>Notes</h1>
-  <p>A hello-world Astro site: static notes, math, and interactive islands.</p>
-  <ul>
-    {notes.map((note) => (
-      <li>
-        <a href={`/notes/${note.id}/`}>{note.data.title}</a>
-        {note.data.summary && <> — <span style="color:var(--ink-soft)">{note.data.summary}</span></>}
-      </li>
-    ))}
-  </ul>
+
+<Article title="The Hearth of Dev">
+  <div class="full">
+    <div class="category-grid">
+      {categories.map((cat) => (
+        <div class="cat-card" style={`--cat-l: ${cat.color}; --cat-d: ${cat.colorDark ?? cat.color};`}>
+          <h2 class="cat-name">{cat.name}</h2>
+          <div class="sub-list">
+            {cat.subs.map((sub) => (
+              <a href={`/notes/${cat.slug}/${sub.slug}`} class="sub-chip">{sub.name}</a>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
 </Article>
+
+<style>
+  /* ── Dark/light color switching ──────────────────────────── */
+  .cat-card           { --cat: var(--cat-l); }
+  :global([data-theme="dark"]) .cat-card { --cat: var(--cat-d); }
+
+  /* ── Grid ────────────────────────────────────────────────── */
+  .category-grid {
+    display: grid;
+    column-gap: var(--size-5);
+    row-gap: var(--size-6);
+    padding: var(--size-6) clamp(var(--size-6), 7vw, 220px);
+    grid-template-columns: 1fr;
+  }
+  @media (width >= 480px) {
+    .category-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (width >= 700px) {
+    .category-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+  @media (width >= 1100px) {
+    .category-grid { grid-template-columns: repeat(4, 1fr); }
+  }
+
+  /* ── Card ────────────────────────────────────────────────── */
+  .cat-card {
+    background: var(--tile-bg);
+    border: 1px solid var(--tile-border);
+    border-radius: var(--radius-3);
+    padding: var(--size-7) var(--size-6) var(--size-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--size-7);
+    min-height: 280px;
+    box-shadow:
+      0 1px 0 0 rgba(255,255,255,0.55) inset,
+      0 1px 3px rgba(0,0,0,0.07),
+      0 4px 14px rgba(0,0,0,0.07);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  :global([data-theme="dark"]) .cat-card {
+    box-shadow:
+      0 1px 0 0 rgba(255,255,255,0.04) inset,
+      0 1px 3px rgba(0,0,0,0.5),
+      0 4px 14px rgba(0,0,0,0.45);
+  }
+  .cat-card:hover {
+    transform: translateY(-3px);
+    box-shadow:
+      0 1px 0 0 rgba(255,255,255,0.55) inset,
+      0 4px 8px rgba(0,0,0,0.08),
+      0 14px 32px rgba(0,0,0,0.11);
+  }
+  :global([data-theme="dark"]) .cat-card:hover {
+    box-shadow:
+      0 1px 0 0 rgba(255,255,255,0.04) inset,
+      0 4px 8px rgba(0,0,0,0.6),
+      0 14px 32px rgba(0,0,0,0.55);
+  }
+
+  /* ── Title ───────────────────────────────────────────────── */
+  .cat-name {
+    font-size: var(--size-5);
+    font-weight: 100;
+    margin: 0;
+    text-align: center;
+    color: var(--ink);
+    letter-spacing: 0.01em;
+  }
+
+  /* ── Pills ───────────────────────────────────────────────── */
+  .sub-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--size-3) var(--size-3);
+    row-gap: var(--size-3);
+    justify-content: flex-start;
+    align-content: flex-start;
+  }
+
+  .sub-chip {
+    display: inline-block;
+    font-size: var(--size-3);
+    font-weight: 400;
+    font-family: "Open Sans Variable", "Open Sans", sans-serif;
+    padding: 8px var(--size-3);
+    border-radius: var(--radius-2);
+    border: none;
+    color: var(--cat);
+    background: color-mix(in oklab, var(--cat), var(--tile-bg) 93%);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background 0.16s ease, color 0.16s ease, transform 0.16s ease;
+  }
+  .sub-chip:hover {
+    background: var(--cat);
+    color: #fff;
+    transform: scale(1.06) translateY(-1px);
+  }
+  .sub-chip:active {
+    transform: scale(0.97);
+  }
+</style>

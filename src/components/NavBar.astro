@@ -1,0 +1,221 @@
+---
+const { pathname } = Astro.url;
+const rawSegments = pathname.split('/').filter(Boolean);
+const segments = pathname === '/' ? ['notes'] : rawSegments;
+const crumbs = [
+  { label: '~', href: '/' },
+  ...segments.map((seg, i) => ({
+    label: seg,
+    href: i === 0 && pathname === '/' ? '/' : '/' + segments.slice(0, i + 1).join('/'),
+  })),
+];
+---
+
+<header class="top-nav">
+  <div class="nav-inner">
+    <nav class="breadcrumb" aria-label="Page path">
+      {crumbs.map((crumb, i) => (
+        <>
+          {i > 0 && <span class="crumb-sep">/</span>}
+          {i < crumbs.length - 1
+            ? <a class="crumb-link" href={crumb.href}>{crumb.label}</a>
+            : <span class="crumb-current">{crumb.label}</span>
+          }
+        </>
+      ))}
+    </nav>
+
+    <div class="nav-actions">
+      <button id="theme-toggle" class="theme-btn" aria-label="Toggle light/dark theme" title="Toggle theme">
+        <span class="icon-sun">☀</span>
+        <span class="icon-moon">☾</span>
+      </button>
+      <a href="/dam" class="nav-link">DAM</a>
+      <a href="/" class="nav-home">
+        <span class="home-title">The Hearth of Dev 👨‍💻</span>
+        <span class="home-sub">By Dario Arzaba</span>
+      </a>
+    </div>
+  </div>
+</header>
+
+<script>
+  const btn = document.getElementById('theme-toggle');
+  btn?.addEventListener('click', () => {
+    const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+  });
+</script>
+
+<style>
+  .top-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    /* translateZ(0) isolates this element into its own GPU compositing layer,
+       preventing iOS Safari from pulling it into the page's scroll layer group
+       when backdrop-filter and will-change:transform are both in play. */
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    background: color-mix(in oklab, var(--bg), transparent 8%);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid color-mix(in oklab, var(--ink), transparent 90%);
+  }
+
+  /* ── Inner layout ────────────────────────────────────────── */
+  .nav-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--size-2) var(--size-6);
+    gap: var(--size-4);
+    min-height: 48px;
+  }
+
+  /* ── Breadcrumb ──────────────────────────────────────────── */
+  .breadcrumb {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 2px;
+    font-family: var(--font-mono);
+    font-size: var(--font-size-0);
+    color: var(--ink-soft);
+    flex-shrink: 1;
+    min-width: 0;
+    /* no global mask — avoids the 4K fade shadow */
+  }
+  .crumb-sep {
+    opacity: 0.4;
+    margin-inline: 1px;
+    user-select: none;
+    white-space: nowrap;
+  }
+  .crumb-link {
+    color: var(--ink-soft);
+    text-decoration: none;
+    transition: color 0.15s;
+    padding: 1px 2px;
+    border-radius: 2px;
+    white-space: nowrap;
+  }
+  .crumb-link:hover { color: var(--accent); }
+  .crumb-current {
+    color: var(--ink);
+    font-weight: 500;
+    /* long page titles wrap instead of overflowing */
+    white-space: normal;
+    word-break: break-word;
+  }
+
+  /* ── Actions ─────────────────────────────────────────────── */
+  .nav-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--size-4);
+    flex-shrink: 0;
+  }
+
+  .nav-link {
+    font-size: var(--font-size-0);
+    font-family: "Open Sans Variable", "Open Sans", sans-serif;
+    letter-spacing: 0.04em;
+    color: var(--ink-soft);
+    text-decoration: none;
+    transition: color 0.15s;
+  }
+  .nav-link:hover { color: var(--ink); }
+
+  .theme-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--ink-soft);
+    font-size: 1.1rem;
+    padding: 2px var(--size-1);
+    line-height: 1;
+    border-radius: var(--radius-2);
+    transition: color 0.15s;
+    display: flex;
+    align-items: center;
+  }
+  .theme-btn:hover { color: var(--ink); }
+
+  :global([data-theme="light"]) .icon-moon { display: inline; }
+  :global([data-theme="light"]) .icon-sun  { display: none; }
+  :global([data-theme="dark"])  .icon-moon { display: none; }
+  :global([data-theme="dark"])  .icon-sun  { display: inline; }
+
+  .nav-home {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    text-decoration: none;
+    padding-left: var(--size-4);
+    border-left: 1px solid color-mix(in oklab, var(--ink), transparent 85%);
+  }
+  .home-title {
+    font-size: var(--font-size-1);
+    font-weight: 600;
+    font-family: "Open Sans Variable", "Open Sans", sans-serif;
+    color: var(--ink);
+    line-height: 1.3;
+    white-space: nowrap;
+  }
+  .home-sub {
+    font-size: var(--font-size-00);
+    font-family: var(--font-mono);
+    color: var(--ink-soft);
+    line-height: 1.3;
+  }
+
+  /* ── Mobile: actions top, breadcrumb below ──────────────── */
+  @media (width < 640px) {
+    .nav-inner {
+      flex-wrap: wrap;
+      align-items: center;
+      padding: var(--size-2) var(--size-3);
+      row-gap: var(--size-1);
+      min-height: unset;
+      gap: 0;
+    }
+    /* Row 1: [theme + DAM] ··········· [Home] */
+    .nav-actions {
+      order: 0;
+      flex: 0 0 100%;
+      justify-content: flex-start;
+      gap: var(--size-3);
+    }
+    .nav-home {
+      margin-left: auto;  /* push home to the right */
+    }
+    /* Row 2: breadcrumb (full width, wraps at natural break points) */
+    .breadcrumb {
+      order: 1;
+      flex: 0 0 100%;
+      padding-block: var(--size-1);
+      flex-wrap: wrap;    /* allow the last long slug to drop to its own line */
+      overflow: visible;
+      /* no mask — crumbs wrap instead of overflowing */
+    }
+    /* crumb-current inherits white-space:normal from desktop rules — no override needed */
+    .home-sub { display: none; }
+  }
+
+  /* ── 4K: scale up nav text ───────────────────────────────── */
+  @media (width >= 2100px) {
+    .nav-inner {
+      padding: var(--size-3) clamp(var(--size-6), 7vw, 220px);
+      min-height: 60px;
+    }
+    .breadcrumb  { font-size: 0.9rem; }
+    .nav-link    { font-size: 0.9rem; }
+    .home-title  { font-size: 1rem; }
+    .home-sub    { font-size: 0.75rem; }
+    .theme-btn   { font-size: 1.3rem; }
+  }
+</style>

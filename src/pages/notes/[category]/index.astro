@@ -1,0 +1,82 @@
+---
+import Article from "../../../layouts/Article.astro";
+import { categories } from "../../../data/categories";
+import type { Category } from "../../../data/categories";
+
+export function getStaticPaths() {
+  return categories.map((cat) => ({
+    params: { category: cat.slug },
+    props: { cat },
+  }));
+}
+
+interface Props { cat: Category; }
+const { cat } = Astro.props;
+---
+
+<Article title={`${cat.name} — Notes`}>
+  <div class="tile" style={`--cat-l: ${cat.color}; --cat-d: ${cat.colorDark ?? cat.color};`}>
+    <p class="tile-name">{cat.name}</p>
+    <div class="sub-rows">
+      {cat.subs.map((sub) => (
+        <a href={`/notes/${cat.slug}/${sub.slug}`} class="sub-row">
+          {sub.name}
+        </a>
+      ))}
+    </div>
+  </div>
+</Article>
+
+<style>
+  .tile           { --cat: var(--cat-l); }
+  :global([data-theme="dark"]) .tile { --cat: var(--cat-d); }
+  .tile {
+    background: var(--tile-bg);
+    border: 1px solid var(--tile-border);
+    border-radius: var(--radius-3);
+    padding: var(--size-7) var(--size-6) var(--size-6);
+    box-shadow:
+      0 1px 0 0 rgba(255,255,255,0.55) inset,
+      0 2px 8px rgba(0,0,0,0.07),
+      0 6px 20px rgba(0,0,0,0.07);
+  }
+  :global([data-theme="dark"]) .tile {
+    box-shadow:
+      0 1px 0 0 rgba(255,255,255,0.04) inset,
+      0 2px 8px rgba(0,0,0,0.5),
+      0 6px 20px rgba(0,0,0,0.45);
+  }
+
+  .tile-name {
+    font-size: 1.4rem;
+    font-weight: 400;
+    color: var(--cat);
+    text-align: center;
+    margin-block: 0 var(--size-5);
+    letter-spacing: 0.01em;
+  }
+
+  .sub-rows {
+    display: flex;
+    flex-direction: column;
+    gap: var(--size-2);
+  }
+
+  .sub-row {
+    display: block;
+    padding: var(--size-2) var(--size-4);
+    border-radius: var(--radius-2);
+    border: 1px solid color-mix(in oklab, var(--cat), transparent 55%);
+    color: var(--cat);
+    background: color-mix(in oklab, var(--cat), var(--tile-bg) 93%);
+    text-decoration: none;
+    font-size: 0.95rem;
+    font-weight: 400;
+    transition: background 0.16s ease, color 0.16s ease;
+  }
+  .sub-row:hover {
+    background: var(--cat);
+    color: #fff;
+    border-color: var(--cat);
+  }
+</style>

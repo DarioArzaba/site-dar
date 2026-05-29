@@ -1,0 +1,22 @@
+---
+import Article from "../../../../layouts/Article.astro";
+import { getCollection } from "astro:content";
+
+const notes = (await getCollection("notes"))
+  .filter((n) => n.id.startsWith("others/concepts/"))
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+---
+<Article title="Concepts — Others">
+  <h1>Concepts</h1>
+  <p>Reference notes on various concepts.</p>
+  <ul>
+    {notes.map((note) => (
+      <li>
+        <a href={`/notes/${note.id}/`}>{note.data.title}</a>
+        {note.data.summary && (
+          <> — <span style="color:var(--ink-soft)">{note.data.summary}</span></>
+        )}
+      </li>
+    ))}
+  </ul>
+</Article>

@@ -16,15 +16,23 @@ export default function DampingPlot() {
   }
   return (
     <div style={{ width: "100%" }}>
-      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto" }}>
-        <line x1={pad} y1={H / 2} x2={W - pad} y2={H / 2} stroke="var(--gray-4)" strokeWidth="1" />
-        <polyline points={pts.join(" ")} fill="none" stroke="var(--accent)" strokeWidth="2.5" />
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", display: "block" }}>
+        <line
+          x1={pad} y1={H / 2} x2={W - pad} y2={H / 2}
+          style={{ stroke: "var(--ink-soft)", strokeWidth: 1, strokeDasharray: "4 3" }}
+        />
+        <polyline
+          points={pts.join(" ")}
+          style={{ fill: "none", stroke: "var(--h2-color)", strokeWidth: 2.5, strokeLinecap: "round", strokeLinejoin: "round" }}
+        />
       </svg>
-      <label style={{ display: "block", marginTop: "0.75rem", fontSize: "0.9rem" }}>
+      <label style={{ display: "block", marginTop: "0.75rem", fontSize: "0.9rem", color: "var(--ink-soft)" }}>
         Damping ratio ζ = {zeta.toFixed(2)}
-        <input type="range" min="0" max="1" step="0.01" value={zeta}
+        <input
+          type="range" min="0" max="1" step="0.01" value={zeta}
           onChange={(e) => setZeta(parseFloat(e.target.value))}
-          style={{ width: "100%" }} />
+          style={{ width: "100%", display: "block", marginTop: "0.4rem" }}
+        />
       </label>
     </div>
   );
