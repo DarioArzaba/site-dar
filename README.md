@@ -1,43 +1,97 @@
-# Astro Starter Kit: Minimal
+<!-- 
+To Add Back To the Top Links
+<a name="readme-top"></a>  <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-```sh
-npm create astro@latest -- --template minimal
-```
+If a site or webapp add (Explore the site link)
+<p align="center">
+    Site description
+    <br />
+    <a href="https://github.com/othneildrew/Best-README-Template"><strong>Explore the docs »</strong></a>
+    <br />
+</p>
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
 
-## 🚀 Project Structure
+For foldable content like a TOC use 
+<details>
+    <summary> Table of Contents </summary>
+    <ol>
+        <li> <a href="#about">About</a>
+        <ul>
+            <li><a href="#built">Built</a></li>
+        </ul>
+    </ol>
+</details>
 
-Inside of your Astro project, you'll see the following folders and files:
+To add built with after first div add:
+<div align="center">
+    <a href="https://nextjs.org/">
+        <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nextjs/nextjs-original-wordmark.svg" alt="Logo" width="80" height="80">
+    </a>
+</div>
+-->
 
-```text
-/
-├── public/
-├── src/
-│   └── pages/
-│       └── index.astro
-└── package.json
-```
+<br />
+<div align="center">
+    <a href="https://github.com/DarioArzaba/blog">
+        <img src="images/logo.png" alt="Logo" width="100">
+    </a>
+    <h3 align="center">The Heart of Dev - My Personal Blog</h3>
+    <p align="center">
+        A personal knowledge base and blog built with Astro.
+        <br />
+        <a href="https://darioarzaba.com"><strong>Visit the site »</strong></a>
+        <br />
+    </p>
+</div>
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
+## About
 
-Any static assets, like images, can be placed in the `public/` directory.
+The Heart of Dev is a personal blog and digital garden that organizes notes, ideas, and references across programming, engineering, languages, history, media, and more. It is built with [Astro](https://astro.build/) as a fully static site deployed to Cloudflare Workers, using MDX for content, React islands for interactive components, KaTeX for math rendering, and Open Sans as the primary typeface. The design uses a custom light/dark theme with a warm off-white background (`#efefe7`), colored headings per level (blue, green, purple, pink, red, gold), and per-category accent colors that carry through navigation tiles and note lists.
 
-## 🧞 Commands
+* [Site](https://darioarzaba.com)
 
-All commands are run from the root of the project, from a terminal:
+## Installation
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
+1. Clone the repo
+   ```sh
+   git clone https://github.com/DarioArzaba/blog
+   cd blog
+   ```
+2. Install and rebuild NPM packages
+   ```sh
+   npm install
+   npm rebuild
+   ```
+3. Deploy either in build mode or dev
+   ```sh
+   npm run dev
+   npm run build
+   ```
 
-## 👀 Want to learn more?
+## Usage
 
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+The site is organized into top-level categories (Programming, Engineering, Languages, Biology, History, Media, Philosophy, Others), each with subcategories that link to individual notes or list pages. Notes are written in MDX and support math expressions, syntax-highlighted code blocks, interactive React islands, and standard Markdown formatting.
+
+**Design details:**
+- **Font**: Open Sans Variable (`@fontsource-variable/open-sans`)
+- **Colors (light)**: background `#efefe7`, ink `#282828`, accent `#007ab3`, headings h1–h6 in blue → green → purple → pink → red → gold
+- **Colors (dark)**: background `#050606`, ink `#e1e1eb`, accent `#72c6ea`
+- **Category accent colors**: Programming `#2b69b1`, Engineering `#01818f`, Personal `#c64539`, Media `#6655c9`, Languages `#845b02`, Biology `#349b60`, History `#a44f8a`, Philosophy `#4e1d5f`, Others `#5e6978`
+
+## Roadmap
+
+- [x] Static site with Astro + MDX
+- [x] Light/dark theme
+- [x] KaTeX math support
+- [x] React interactive islands
+- [ ] Search
+    - [ ] Full-text search across notes
+
+## License
+
+Distributed under the [MIT License](https://mit-license.org/).
+
+## Contact
+
+Dario Arzaba - dario.arzaba@gmail.com
