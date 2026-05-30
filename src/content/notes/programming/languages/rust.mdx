@@ -45,6 +45,10 @@ rustc main.rs
 
 ## Cargo 
 
+***
+
+
+
 Cargo is the package manager and build system in Rust:
 
 ```shell title:"Hello World with Cargo"
@@ -107,272 +111,233 @@ fn main(){
 }
 ```
 
+Data types can be categorized into scalar and compound. Scalar are integers, floating-point, characters and Boolean.  Signed integers use 1 bit to represent the sign, they can be used for positive and negative values. Unsigned used al the bits to represent the value. The default integer value is `i32`
 
-[[Markdown]] is a [[Markup Language|markup language]] for formatting text [^1] and the primary [[File Format|file format]] for [[Obsidian Note|obsidian notes]]. Use this note to test various you can style your notes. 
+| Data Type | Annotation           | Type   | Description                                                         |
+| --------- | -------------------- | ------ | ------------------------------------------------------------------- |
+| Integer   | 8, 16, 32, 64, 128   | Scalar | Numerical values (unsigned - u, signed - i) with no fraction.       |
+| Floating  | f32, f64             | Scalar | Numerical values with decimal point. Single or double precision.    |
+| Boolean   | bool                 | Scalar | Boolean value of 1 byte. Can be `true` or `false`                   |
+| Chars     | char (Single quotes) | Scalar | Unicode scalar values 4 bytes in size. Unicode values as `'\u{2A}'` |
 
----
-# This is a heading 100
+```rust title:"main.rs - Scalar Data Types"
+fn main(){
+    println!("=== SCALAR TYPES ===\n");
+    println!("--- Signed Integers ---");
+    let i8_val: i8 = -128;
+    let i16_val: i16 = -32768;
+    let i32_val: i32 = -2147483648;
+    let i64_val: i64 = -9223372036854775808;
+    let i128_val: i128 = -170141183460469231731687303715884105728;
+    let isize_val: isize = -42;    
+    println!("i8: {} (type: {})", i8_val, type_of(&i8_val));
+    println!("i16: {} (type: {})", i16_val, type_of(&i16_val));
+    println!("i32: {} (type: {})", i32_val, type_of(&i32_val));
+    println!("i64: {} (type: {})", i64_val, type_of(&i64_val));
+    println!("i128: {} (type: {})", i128_val, type_of(&i128_val));
+    println!("isize: {} (type: {})", isize_val, type_of(&isize_val));
+    
+    println!("\n--- Unsigned Integers ---");
+    let u8_val: u8 = 255;
+    let u16_val: u16 = 65535;
+    let u32_val: u32 = 4294967295;
+    let u64_val: u64 = 18446744073709551615;
+    let u128_val: u128 = 340282366920938463463374607431768211455;
+    let usize_val: usize = 42;
+    println!("u8: {} (type: {})", u8_val, type_of(&u8_val));
+    println!("u16: {} (type: {})", u16_val, type_of(&u16_val));
+    println!("u32: {} (type: {})", u32_val, type_of(&u32_val));
+    println!("u64: {} (type: {})", u64_val, type_of(&u64_val));
+    println!("u128: {} (type: {})", u128_val, type_of(&u128_val));
+    println!("usize: {} (type: {})", usize_val, type_of(&usize_val));
+    
+    println!("\n--- Floating Point ---");
+    let f32_val: f32 = 3.141;
+    let f64_val: f64 = 2.718;
+    println!("f32: {} (type: {})", f32_val, type_of(&f32_val));
+    println!("f64: {} (type: {})", f64_val, type_of(&f64_val));
+    
+    println!("\n--- Boolean ---");
+    let bool_true: bool = true;
+    let bool_false: bool = false;
+    println!("bool (true): {} (type: {})", bool_true, type_of(&bool_true));
+    println!("bool (false): {} (type: {})", bool_false, type_of(&bool_false));
+    
+    println!("\n--- Character ---");
+    let char_val: char = '🦀';
+    let char_ascii: char = 'A';
+    println!("char (emoji): {} (type: {})", char_val, type_of(&char_val));
+    println!("char (ASCII): {} (type: {})", char_ascii, type_of(&char_ascii));
 
-## This is a heading 2
-
-Some text
-
-### This is a heading 3
-
-Some further text
-
-#### This is a heading 4
-
-##### This is a heading 5
-
-###### This is a heading 6
-
-This is a paragraph of text. 
-
-This is a second paragraph of text. Note that blank spaces and newlines are collapsed into a single one. To add multiple use `&nbsp;` (blank space) or `<br>` (newline) in your text. This has backlashes `\` to escape the asterisks \*\*Bold\*\* This text has **Bold**, *Italic*, ~~Strike~~, ==Highlight==. This text has **Bold with _nested_ Italics** and ***Bold with Italics***. A note **tag** is a case-insensitive keyword or topic that helps to categorize notes. Create them using a hash symbol as `#meeting`. Note that tags can be added using the [[Obsidian Note Properties|note's properties]]. To create nested tags use slashes as `#inbox/to-read`.  This is a tag #FirstTag  and another tag #SecondTag
-
-This [[example note|link is internal]] using wikilink format. This [link is internal](example%20note.md) using Markdown format. This [link is external](http://www.example.com) using brackets and parentheses. This [link is external](obsidian://open?vault=MainVault&file=Note.md) and points to a file in another vault. Escape spaces in links using `%20` or by wrapping the URL inside `< >`. Note that block level refs are not part of the standard markdown syntax. ^Link-Syntax-Examples-In-Obsidian
-
-You can have **inline code** `like this` using backticks. To create **code blocks** use triple backticks or 4 spaces (tab): 
-
-```ts
-function f<T>(x: T): boolean {
-  // Check type and log
-  if (typeof x === "string") {
-    console.log(`Value: ${x}`); // log string  
-  } else {
-    let n = 1 + 2 * 3 / 4 - 5; // math ops
-    for (let i = 0; i < 2; i++) n += i;
-  }
-  return !!x; // double negation
 }
 ```
 
-Add a comment with `%% Comment %%`like this: %%This is a markdown comment%%.  Most HTML tags are rendered such as <u>underline</u> or <s>strike</s>, and even comments `<!-- Comment --> `: Use `Alt` to create multiple carets and edit text quickly.
+Compound data types can store multiple values, they are Arrays and Tuples. For mutable tuples only their values are allowed to mutate, their data type or tuple size remain fixed.
 
+| Data Type | Annotation              | Type     | Description                                                                                                                                                             |
+| --------- | ----------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tuples    | `(value1, value2, ...)` | Compound | Collection of related items, they can store a mix of data types. Fixed in length once declared with zero based indexing. Period based index access as `tuple.1`         |
+| Array     | `[value1, value2, ...]` | Compound | Collection of items with the same data type. They are stored sequentially in memory. Fixed in length with zero based indexing. Bracket based index access as `array[1]` |
+
+```rust title:"main.rs - Compound Data Types"
+fn main(){
+
+    println!("--- Tuple ---");
+    let tuple: (i32, f64, char, bool) = (42, 3.141, 'R', true);
+    println!("Tuple: {:?} (type: {})", tuple, type_of(&tuple));
+    println!("Element access: {}, {}, {}, {}", tuple.0, tuple.1, tuple.2, tuple.3);
+
+    println!("\n--- Unit Type ---");
+    let unit: () = ();
+    println!("Unit: {:?} (type: {})", unit, type_of(&unit));
+    
+    // Array
+    println!("\n--- Array ---");
+    let array: [i32; 5] = [1, 2, 3, 4, 5];
+    println!("Array: {:?} (type: {})", array, type_of(&array));
+}
+```
+
+Variables can be declared without assigning a value as long as the data type is specified, before using this variables you will need to initialize them. If you want to initialize an array with the same value Rust recommends to use a repeat expression as `array = [0;3]` instead of `array = [0,0,0]`. Notice that the rust compiler will panic at compile and even run-time if we try to access an index out of bounds, this is done for memory safety by preventing invalid memory access.
+
+## Comments
+
+Single-line comments use double forward slash `//`. Multi-line comments use `/**/`.
+## Functions
+
+Functions organize code into modules to be reused. The function `main()` is a special function present in every Rust program as the entry point for execution. Functions are declared using `fn` with the name of the function and arguments inside parentheses (must have their type specified).
+
+```rust title:"main.rs - Function Definition"
+fn function_name(arg1:type, arg2:type,...){
+	// Code
+}
+```
+
+It is recommended to use underscores for multi-word function identifiers. A function body can consist of statements or expressions. Statements perform an action without returning a value while expressions evaluate to produce a resulting value. A function can return a value explicitly with `return`.
+
+Functions that are expected to return a value must have the data type of the return value specified with `->` such as `fn sum(x:i16, y:i16) -> i16` . If it is expected to return multiple values you can use a tuple such as `fn sum_v2(x : i16, y : i16) -> (i16, i16, i16)`. There is an implicit return activated when the last statement in the function body is an expression, such as `fn sum(x : i16, y : i16) -> i16 { x + y }`.
+
+## Control Flow
+
+Control flow tools like conditionals and loops allow us to execute repeating code or based on certain conditions. An `if` expression is used for conditional execution, for mutually exclusive blocks we can use `if ... else` expressions. For multiple non-overlapping conditions you can use the `if .. else if` expressions.
+
+```rust title:"main.rs - Conditionals"
+fn main(){
+	let a = 10;
+	if a == 10 {
+		println!("a is 10");
+	} else {
+		println!("a is not 10");
+	}
+
+	let grade = 67;
+	if grade > 90 {
+		println!("A");
+	} else if grade > 80 {
+		println!("B");
+	} else if grade > 70 {
+		println!("C");
+	} else if grade > 60 {
+		println!("D");
+	} else {
+		println!("F - Failed!");
+	}
+
+}
+```
+
+To execute a block of code multiple times we can use a `loop`,  `while` or `for` loop to do so. Code inside a loop block runs indefinitely until explicitly stopped with `break` or the program terminates. You can pass a value after the break expression to be returned by the loop block.
+*italic*
+A `while` block will keep running until a condition becomes false. A `for` block is used to iterate over the elements of a collection, you could do it with a while loop and a counter but it is preferred to use a `for` loop for performance and safety reasons.
+
+```rust title:"main.rs - Loops"
+fn main(){
+	let mut a = 5;
+	let finalA = loop {
+		a -= 1;
+		println!("a={}", a);
+		if a == 2 {
+			break a;
+		}
+	}
+	println!("Loop result = {}", finalA);
+	
+	let mut b = 5;
+	while b > 2 {
+		b -= 1;
+		println!("b={}", b);
+	}
+	
+	let values = [1,2,3,4];
+	for value in values.iter() {
+		println!("value = {}", value);
+	}
+}
+```
+
+## Questions 
+
+Does this compile? If not, why and how to correct?
+
+```rust
+fn main() {
+  let a=2;
+  let b=3.0;
+  println!("Sum of a and b = {}", a+b);
+}
+```
+
+> [!check]- Answer
 > 
->   This is a **blockquote** with text in bold and in *Italics*
-> 
+> Answer
 
-[x] **Task lists**: This is a completed task.
-[ ] **Task lists**: This is an incomplete task.
+You have an array of 4 floats, implement find_mean() 
 
-> This might be a blockquote
-
-Or do i need two lines
-
-> 
-> Is this okay
-
-Maybe now it will work
-
-> Is now this okayu?
->
-
-Hey no some lists
-
-- **Unordered lists**, by adding a `-`, `*`, or `+` before the text
-    - Second list item
-        - Third list item
-        - Fourth list item
-
-1. **Ordered lists** , start each line with a number followed by a `.`:
-    1. Second list item
-        1. Third list item
-        2. Fourth list item
-
-All list types can be **nested** and combined:
-
-* First list item
-    1. Ordered nested list item
-        1. Other
-2. Second list item
-    - Unordered nested list item
-        - Other
-            - Other
-    - [ ] Task Nested
-
----
-
-You can fold headings and indented lists. Add a horizontal line with three or more stars `***`, hyphens `---`, or underscore `___` on the same line. They can even have spaces between them.
-
-***
-
-Another line
-
-This is an external **image**:
-
-![Engelbart](https://history-computer.com/ModernComputer/Basis/images/Engelbart.jpg)
-
-Images can be **resized** with the format `[[image]|sizeNumber]`:
-
-![Engelbart|100](https://history-computer.com/ModernComputer/Basis/images/Engelbart.jpg)
-
-If you use an **internal image** you can add custom classes like `center` to the name. Add **math expressions** using MathJax ($2+2=4$) by surrounding it in dollar signs.
-
-$$
-\begin{vmatrix}a & b\\
-c & d
-\end{vmatrix}=ad-bc
-$$
-
-Obsidian uses Prism ^[This is an inline footnote!] for **syntax highlighting** of supported languages [^3]. Note that Source and Live mode do not support PrismJS so the highlighting might vary. 
-
-You can add **footnotes** to a paragraph or as inline like in the previous text. Even named footnotes are converted into numbers in reader mode. [^4]
-
----
-
-Create **tables** using vertical bars and hyphens. The header row must have at least two hyphens per column. First and last vertical bar are optional:
-
-```md
-| First name | Last name |
-| ---------- | --------- |
-| Max        | Planck    |
-| Marie      | Curie     |
-```
-
-| First name | Last name |
-| ---------- | --------- |
-| Max        | Planck    |
-| Marie      | Curie     |
-You can escape `\` the vertical bar for features such as aliases or image resize. Also, you can use colons to define the content alignment:
-
-```md
-Left-aligned text | Center-aligned text | Right-aligned text
-:-- | :--: | --:
-Content | Content | Content
-```
-
-| Left-aligned text | Center-aligned text | Right-aligned text |
-| :---------------- | :-----------------: | -----------------: |
-| Content           |       Content       |            Content |
-
----
-
-Use Mermaid to add **diagrams** and charts to the note, we recommend using the Mermaid [Live Editor](https://mermaid-js.github.io/mermaid-live-editor) first to design the diagram:
-
-```mermaid
-sequenceDiagram
-    Alice->>+John: Hello John, how are you?
-    Alice->>+John: John, can you hear me?
-    John-->>-Alice: Hi Alice, I can hear you!
-```
-
-You can add internal links using the `internal-link` class to your node:
-
-```mermaid
-graph TD
-NoteOne --> NoteTwo
-class NoteOne,NoteTwo internal-link;
-```
-
-Note that internal links on mermaid diagrams are not reflected on the graph view. More info on the [official Mermaid docs](https://mermaid.js.org/intro/).
-
----
-
-Use **callouts** to add an icon and color to a blockquote. Callouts are defined using type identifiers as `[!type]` (unsupported types default to `note`). The type identifier is case-insensitive.
-
-* List of supported types: abstract (summary, tldr), info, todo, tip (hint, important), success (check, done), question (help, faq), warning (caution, attention), failure (fail, missing), danger (error), bug, example, quote (cite).
-
-Callouts can become foldable by adding a plus (unfolded) or minus(folded) after the type id `[!type]+`:
-
-> [!tip]- Are callouts foldable?
-> Yes! In a foldable callout, the contents are hidden when the callout is collapsed.
-
-> [!question] Can callouts be nested?
-> > [!todo] Yes!, they can.
-> > > [!example]  You can even use multiple layers of nesting.
-
-Create a custom callout with CSS:
-
-```css
-.callout[data-callout="custom-question-type"] {
-    --callout-color: 0, 0, 0;
-    --callout-icon: lucide-alert-circle;
-    /* You could also use a custom SVG */
-    /*--callout-icon: '<svg>...custom svg...</svg>';*/
+```rust
+fn main() {
+  let ar = [2.5, 3.0, 4.5, 2.0];
+  println!("Mean of all elements of ar = {}"),
+  find_mean(ar));
 }
 ```
 
----
+Write down the output of this program
 
-You can **embed files**, videos (`![](https://www.youtube.com/watch?v=NnTvZWp5Q7o)`), tweets (`![](https://twitter.com/obsdmd/status/1580548874246443010)`) or even entire web pages (`<iframe src="URL"></iframe>`). For PDF's you can even specify a page or size as `![[PDF#page=2#height=400]]`. ^Custom-Block-ID
-
-Make sure embedded files are part of the accepted obsidian file formats: 
-
-1. Markdown files: `md`
-2. Image files: `avif`, `bmp`, `gif`, `jpeg`, `jpg`, `png`, `svg`, `webp`
-3. Audio files: `flac`, `m4a`, `mp3`, `ogg`, `wav`, `webm`, `3gp`
-4. Video files: `mkv`, `mov`, `mp4`, `ogv`, `webm`
-5. PDF files: `pdf`
-
-[^1]: Obsidian supports [CommonMark](https://commonmark.org/) and [GitHub Flavored Markdown](https://github.github.com/gfm/).
-[^3]: Add 2 spaces at the start of each new line.
-    This lets you write footnotes that span multiple lines.
-[^4]: Prism [Supported Languages](https://prismjs.com/#supported-languages)
-
-Finally some lorem ipsum generated with: https://jaspervdj.be/lorem-markdownum/
-# Lorem Ipsum
-
-## Cornua admovit dicta poterat
-
-Lorem markdownum moribundo. Inamabile seque Aesonis recuset, pasci cista sociis, pastoris et, alto!
-
-> Innocuum reddite tuens incaluit [denique dissuaserat](#una-nec-libasse-terricula) scissaeque male vera umbraeque constitit ut ipsa duro. Manu saxi aures adulterium; tamen ut infernum calido  `syn_bar_port` causam. Amor gramina tubicen *virginis* pendat ora quam. Vota dei Meropisque molibus. Tandemque mite haec procumbere Caenis turba hos tamen clausere illis.
-
-[Silvas namque pinus](#per-mentis-et-teguntur) honores colentibus cibo obliquis nomine sit *positum poscis*. Flectit suam? **Sed tentoria**, petens **exire**, obsessum *nil* iamque finierat terras ne.
-## Aquarum est Venerem eductum
-
-Post os et, fortia adfectas cretus. **Di** apta: *est* videt fassusque lilia ignorant concolor tectis tellure secuta corpus clauserat **excipit habet** exsangues Thisbes. Cursus parva quod illa retro simulat toro fratribus *crura*, in corpore vestigia quantam. Cupidine tamen `hdtv_goodput_bar` sera in: gens, sub que Dardanio. Subiectis mundi, nostro `nosql` et calet natarum et prius in.
-
-1. Tenentes caelo
-2. Solane aurem esse auras mensura fremit
-3. Ducis ruit pertimuit voluptas furta tum dente
-## Per mentis et teguntur
-
-Ibimus fatemur sacraque? Quae non recludi desilit temptant optat accedere; non cui Atlas sunt Tethyn gratissima coniunx, simulat. Senesque fraude, nupta corporis hinc debueram. Cum tu equos Prospicientis ictus progenuit Alpheias haec nec Romam! Sceleratum una abest de Peneos eundem [manus](#aquarum-est-venerem-eductum) at male vestibus et tacito furoris quoque errore, via [isset](#cornua-admovit-dicta-poterat).
-
-```c
-#include <stdio.h>
-#define CONCAT(a,b) a##b
-typedef union {
-    uint32_t u32;
-    uint8_t bytes[4];
-} Word;
-typedef struct {
-    unsigned a:3;
-    unsigned b:5;
-    Word w;
-    struct Node *next;
-} Node;
-typedef void (*callback_t)(int,int*);
-inline int tricky(int x) { return x ^ (x<<2) | (x>>1); }
-void operateArray(int *arr, size_t n, callback_t cb) {
-    FOREACH(i,n) cb(i,&arr[i]);
-}
-GEN_FUNC(test)
-int main(void) {
-    Node *head = malloc(sizeof(Node));
-    if(!head) return EXIT_FAILURE;
-    head->a = 5; head->b = 17; head->next = NULL;
-    head->w.u32 = 0xDEADBEEF;
-    int arr[6] = {1,2,3,4,5,6};
-    operateArray(arr, 6, test_func);
-    printf("Bitfield a=%u b=%u w=0x%X\n", head->a, head->b, head->w.u32);
-    const char *msg = MULTI_LINE_STR;
-    puts(msg);
-    int result;
-    asm("movl $42, %0" : "=r"(result));
-    printf("Inline asm result=%d\n", result);
-    free(head);
-    return 0;
+```rust
+fn main() {
+  let mut a:i8 = 125;
+  a = a+3;
+  println!("a={}", a);
 }
 ```
 
-| Short | Medium Text                                                                                                                                                                                                                                                                                                                                                                                 | Very Long Text That Should Stress The Layout And Potentially Cause Horizontal Scroll Or Wrapping Issues If The Container Is Not Wide Enough                                                                                             |
-| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| A     | BLorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.BLorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.Example Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. | Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. |
-|       | Test                                                                                                                                                                                                                                                                                                                                                                                        | This is another extremely long string meant to push the layout limits of any table container, including nested divs, CSS flexboxes, or responsive designs.                                                                              |
-| C     | Short                                                                                                                                                                                                                                                                                                                                                                                       | Supercalifragilisticexpialidocious even though the sound of it is something quite atrocious, this long single word tests overflow handling.                                                                                             |
-| D     | Medium                                                                                                                                                                                                                                                                                                                                                                                      | Here is a sentence that goes on and on and might even contain punctuation, numbers 1234567890, and symbols !@#$%^&*() to further stress text rendering.                                                                                 |
-| E     | Tiny                                                                                                                                                                                                                                                                                                                                                                                        | A very long paragraph that repeats: Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit.                          |
+State if true or false:
+
+1. f32 is the default for floats = true
+2. Doing `let a = 5;` the data type of x is i8 = false
+3. Floats are compound data types = true
+4. Statements do not produce a result = true
+5. What is shadowing = 
+
+
+
+
+# Egui
+
+GUI libary for rust that runs natively or on the web, also available as a libary on many game engines. It is a very simple, easy to use GUI library. It uses the Eframe framework meaning it supports Linux, Mac, Windows, Android and Web. 
+
+```rust
+ui.heading("My egui Application");
+ui.horizontal(|ui| {
+    ui.label("Your name: ");
+    ui.text_edit_singleline(&mut name);
+});
+ui.add(egui::Slider::new(&mut age, 0..=120).text("age"));
+if ui.button("Increment").clicked() {
+    age += 1;
+}
+ui.label(format!("Hello '{name}', age {age}"));
+ui.image(egui::include_image!("ferris.png"));
+```
+
+[https://docs.rs/egui](https://docs.rs/egui). 

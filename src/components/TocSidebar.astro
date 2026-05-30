@@ -1,0 +1,64 @@
+<nav class="toc-sidebar" id="toc-sidebar" aria-label="On this page">
+  <ul class="toc-list" id="toc-list"></ul>
+</nav>
+
+<script>
+  (function () {
+    const sidebar = document.getElementById('toc-sidebar');
+    const list    = document.getElementById('toc-list');
+    const main    = document.querySelector('main.prose-layout');
+    const btn     = document.getElementById('toc-toggle-btn');
+    if (!sidebar || !list || !main) return;
+
+    const headings = Array.from(main.querySelectorAll('h1, h2, h3'));
+    if (headings.length < 2) { sidebar.style.display = 'none'; return; }
+
+    headings.forEach(function (h) {
+      if (!h.id) return;
+      const clone = h.cloneNode(true);
+      clone.querySelectorAll('[aria-hidden]').forEach(function (el) { el.remove(); });
+      const label = clone.textContent.trim();
+      if (!label) return;
+      const li = document.createElement('li');
+      li.dataset.level = h.tagName;
+      const a = document.createElement('a');
+      a.href = '#' + h.id;
+      a.textContent = label;
+      li.appendChild(a);
+      list.appendChild(li);
+    });
+
+    const links = Array.from(list.querySelectorAll('a'));
+
+    function updateActive() {
+      const threshold = window.scrollY + window.innerHeight * 0.22;
+      let active = headings[0];
+      for (let i = 0; i < headings.length; i++) {
+        if (headings[i].offsetTop <= threshold) active = headings[i];
+      }
+      links.forEach(function (a) { a.classList.remove('toc-active'); });
+      if (active) {
+        const link = list.querySelector('a[href="#' + active.id + '"]');
+        if (link) link.classList.add('toc-active');
+      }
+    }
+    window.addEventListener('scroll', updateActive, { passive: true });
+    updateActive();
+
+    // Restore saved visibility (default: visible)
+    var isHidden = localStorage.getItem('toc-visible') === 'false';
+    if (isHidden) {
+      sidebar.classList.add('toc-hidden');
+    } else if (btn) {
+      btn.classList.add('toc-btn-active');
+    }
+
+    if (btn) {
+      btn.addEventListener('click', function () {
+        var nowHidden = sidebar.classList.toggle('toc-hidden');
+        localStorage.setItem('toc-visible', nowHidden ? 'false' : 'true');
+        btn.classList.toggle('toc-btn-active', !nowHidden);
+      });
+    }
+  })();
+</script>

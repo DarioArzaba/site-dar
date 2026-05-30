@@ -23,7 +23,7 @@
   --mark-ink:    #1a2e0e;
 
   /* Structural */
-  --hr-color:    #5e6b72;
+  --hr-color:    #8a9a68;
   --selection-bg:#b0cbe8;
 
   /* Headings */
@@ -65,7 +65,7 @@
   --mark-ink:    #c8f0b8;
 
   /* Structural */
-  --hr-color:    #637884;
+  --hr-color:    #4ab8c8;
   --selection-bg:#32537b;
 
   /* Headings */
@@ -122,6 +122,10 @@ h6 { font-size: 1.23em; font-weight: 400; color: var(--h6-color); margin-block: 
 
 /* ── Inline text ─────────────────────────────────────────── */
 p  { margin-block: 0 var(--size-3); max-inline-size: var(--measure); }
+/* image-wrapping <p>s that break into wider columns must fill their column */
+.prose-layout > p.wide,
+.prose-layout > p.bleed,
+.prose-layout > p.full { max-inline-size: none; }
 
 a  { color: var(--link); text-decoration-thickness: 1px; text-underline-offset: 2px; }
 a:hover { color: var(--link-hover); }
@@ -138,10 +142,17 @@ mark {
 
 /* ── Horizontal rule ─────────────────────────────────────── */
 hr {
-  border: none;
-  border-top: 1px solid var(--hr-color);
+  /* UA sets overflow:hidden which prevents grid-stretch from expanding width on void elements */
+  display: block;
+  width: 100%;
+  overflow: visible;
+  height: 0;
+  background: none;
+  border: 0;
+  border-top: 1.5px solid var(--hr-color);
   margin-block: var(--size-6);
-  opacity: 0.6;
+  margin-inline: 0;
+  opacity: 0.75;
 }
 
 /* ── Code ────────────────────────────────────────────────── */
@@ -198,17 +209,21 @@ tr:hover td { background: color-mix(in oklab, var(--bg), var(--h2-color) 5%); }
 .prose-layout {
   display: grid;
   grid-template-columns:
-    [full-start] minmax(var(--size-3), 1fr)
-    [wide-start] minmax(0, var(--size-10))
+    [full-start]  minmax(var(--size-3), 0.5fr)
+    [bleed-start] minmax(0, 0.5fr)
+    [wide-start]  minmax(0, var(--size-10))
     [content-start] min(var(--measure), 100% - var(--size-5)) [content-end]
     minmax(0, var(--size-10)) [wide-end]
-    minmax(var(--size-3), 1fr) [full-end];
+    minmax(0, 0.5fr) [bleed-end]
+    minmax(var(--size-3), 0.5fr) [full-end];
   row-gap: var(--size-3);
   padding-block: var(--size-8);
   padding-block-start: calc(var(--size-8) + var(--nav-h));
 }
 .prose-layout > *      { grid-column: content; }
 .prose-layout > .wide  { grid-column: wide; }
+/* bleed: exactly halfway between wide and full (uses half the outer 1fr margin) */
+.prose-layout > .bleed { grid-column: bleed; }
 .prose-layout > .full  { grid-column: full; }
 
 /* ── Images ──────────────────────────────────────────────── */
@@ -221,9 +236,14 @@ img {
 /* Named modifiers from alt text: ![alt|half](url)  etc. */
 .img-half   { max-width: 50%; }
 .img-center { display: block; margin-inline: auto; }
-/* img-wide / img-full: parent <p> gets the grid class, img fills it */
+/* img-wide / img-full / img-bleed: parent <p> gets the grid class, img fills it */
 .img-wide,
-.img-full   { width: 100%; }
+.img-full,
+.img-bleed  { width: 100%; }
+/* combined with center: natural size, centered in its column (not stretched) */
+.img-wide.img-center,
+.img-bleed.img-center,
+.img-full.img-center  { width: auto; }
 
 /* ── Mermaid diagrams ─────────────────────────────────────── */
 .mermaid-block {
@@ -295,6 +315,77 @@ details.callout > summary::-webkit-details-marker { display: none; }
   margin-block: var(--size-4);
 }
 .table-scroll table { margin-block: 0; }
+
+/* ── Heading anchor links (rehype-autolink-headings) ─────── */
+.heading-anchor {
+  opacity: 0;
+  margin-inline-start: 0.3em;
+  font-size: 0.78em;
+  font-weight: 400;
+  color: var(--ink-faint);
+  text-decoration: none;
+  transition: opacity 0.15s;
+  user-select: none;
+}
+:is(h1, h2, h3, h4, h5, h6):hover .heading-anchor { opacity: 0.6; }
+.heading-anchor:hover { opacity: 1 !important; color: var(--accent); }
+
+/* ── TOC Sidebar (desktop ≥ 1980px only) ─────────────────── */
+.toc-sidebar { display: none; }
+
+@media (min-width: 1980px) {
+  .toc-sidebar {
+    display: block;
+    position: fixed;
+    top: calc(var(--nav-h) + var(--size-7));
+    /* Left-aligned with the nav button: sits in the min-gutter zone
+       (between full-start and bleed-start), matching nav-inner left padding */
+    left: var(--size-6);
+    width: 220px;
+    max-height: calc(100vh - var(--nav-h) - var(--size-9));
+    overflow-y: auto;
+    scrollbar-width: none;
+    /* show/hide transition */
+    opacity: 1;
+    transform: translateX(0);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+  .toc-sidebar::-webkit-scrollbar { display: none; }
+  /* hidden state */
+  .toc-sidebar.toc-hidden {
+    opacity: 0;
+    transform: translateX(-10px);
+    pointer-events: none;
+  }
+
+  .toc-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    font-size: 0.74rem;
+    line-height: 1.45;
+  }
+  .toc-list li                  { margin-block: 0.18em; }
+  .toc-list li[data-level="H2"] { padding-inline-start: 0.75em; }
+  .toc-list li[data-level="H3"] { padding-inline-start: 1.5em; }
+  .toc-list a {
+    display: block;
+    padding-block: 0.08em;
+    color: var(--ink-faint);
+    text-decoration: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color 0.12s;
+  }
+  .toc-list a:hover      { color: var(--ink); }
+  .toc-list a.toc-active { color: var(--accent); }
+}
+
+/* 4K: mirror the nav-inner padding growth so button and sidebar stay aligned */
+@media (min-width: 2100px) {
+  .toc-sidebar { left: clamp(var(--size-6), 7vw, 220px); width: 200px; }
+}
 
 /* ── Utility ─────────────────────────────────────────────── */
 .center-box {

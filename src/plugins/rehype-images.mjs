@@ -1,10 +1,12 @@
 // Parses Obsidian-style image modifiers from alt text: ![alt|modifier](url)
-// Numeric modifier  → sets width in px:      ![Photo|200](url)
-// Named modifiers   → adds utility class:
-//   half    → max-width 50%
-//   full    → grid-column: full  (wraps parent <p> in full column)
-//   wide    → grid-column: wide  (wraps parent <p> in wide column)
-//   center  → centered block image
+// Modifiers are space-separated after the final `|` — multiple can be combined:
+//   Numeric  → sets width in px:       ![Photo|200](url)
+//   half     → max-width 50%
+//   center   → centered block image
+//   wide     → grid-column: wide       (wraps parent <p>)
+//   bleed    → grid-column: full with edge padding (wraps parent <p>)
+//   full     → grid-column: full       (wraps parent <p>)
+//   Combined → ![Photo|300 center](url)  sets 300px AND centers
 
 import { visit } from 'unist-util-visit';
 
@@ -17,28 +19,37 @@ export function rehypeImages() {
       const pipeIdx = alt.lastIndexOf('|');
       if (pipeIdx === -1) return;
 
-      const cleanAlt  = alt.slice(0, pipeIdx).trim();
-      const modifier  = alt.slice(pipeIdx + 1).trim();
+      const cleanAlt = alt.slice(0, pipeIdx).trim();
+      const parts    = alt.slice(pipeIdx + 1).trim().split(/\s+/).filter(Boolean);
 
       node.properties.alt = cleanAlt;
+      if (parts.length === 0) return;
 
-      const num = Number(modifier);
-      if (modifier !== '' && !isNaN(num)) {
-        node.properties.style = `width:${num}px;height:auto;`;
-        return;
+      const classes   = [];
+      const gridMods  = [];
+
+      for (const part of parts) {
+        const n = Number(part);
+        if (!isNaN(n)) {
+          node.properties.style = `width:${n}px;height:auto;`;
+        } else {
+          classes.push(`img-${part}`);
+          if (part === 'wide' || part === 'full' || part === 'bleed') {
+            gridMods.push(part);
+          }
+        }
       }
 
-      node.properties.className = [
-        ...(node.properties.className ?? []),
-        `img-${modifier}`,
-      ];
+      if (classes.length) {
+        node.properties.className = [...(node.properties.className ?? []), ...classes];
+      }
 
       // For grid-breaking modifiers, push the class up to the wrapping <p>
-      if (parent?.tagName === 'p' && (modifier === 'wide' || modifier === 'full')) {
+      if (parent?.tagName === 'p' && gridMods.length > 0) {
         parent.properties ??= {};
         parent.properties.className = [
           ...(parent.properties.className ?? []),
-          modifier,
+          ...gridMods,
         ];
       }
     });

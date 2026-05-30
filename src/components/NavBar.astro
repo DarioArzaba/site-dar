@@ -13,6 +13,13 @@ const crumbs = [
 
 <header class="top-nav">
   <div class="nav-inner">
+    <button id="toc-toggle-btn" class="toc-toggle-btn" aria-label="Toggle table of contents" title="Toggle table of contents">
+      <svg width="15" height="13" viewBox="0 0 15 13" fill="currentColor" aria-hidden="true">
+        <rect x="0" y="0"    width="15" height="2.2" rx="1.1"/>
+        <rect x="3" y="5.4"  width="12" height="2.2" rx="1.1"/>
+        <rect x="5" y="10.8" width="10" height="2.2" rx="1.1"/>
+      </svg>
+    </button>
     <nav class="breadcrumb" aria-label="Page path">
       {crumbs.map((crumb, i) => (
         <>
@@ -74,6 +81,26 @@ const crumbs = [
     padding: var(--size-2) var(--size-6);
     gap: var(--size-4);
     min-height: 48px;
+  }
+
+  /* ── TOC toggle (desktop only) ──────────────────────────── */
+  .toc-toggle-btn {
+    display: none; /* hidden below 1980px */
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 3px var(--size-1);
+    border-radius: var(--radius-2);
+    color: var(--ink-faint);
+    transition: color 0.15s;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .toc-toggle-btn:hover { color: var(--ink-soft); }
+  :global(.toc-btn-active) { color: var(--ink-soft) !important; }
+
+  @media (min-width: 1980px) {
+    .toc-toggle-btn { display: flex; }
   }
 
   /* ── Breadcrumb ──────────────────────────────────────────── */
