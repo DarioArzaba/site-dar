@@ -113,12 +113,25 @@ h1, h2, h3, h4, h5, h6 {
   font-family: "Open Sans Variable", "Open Sans", sans-serif;
   line-height: var(--font-lineheight-1);
 }
-h1 { font-size: 1.9em;  font-weight: 400; color: var(--h1-color); margin-block: 0 0.6em; }
-h2 { font-size: 1.75em; font-weight: 400; color: var(--h2-color); margin-block: 1.4em 0.4em; }
-h3 { font-size: 1.61em; font-weight: 400; color: var(--h3-color); margin-block: 1.2em 0.3em; }
-h4 { font-size: 1.45em; font-weight: 400; color: var(--h4-color); margin-block: 1em 0.3em; }
-h5 { font-size: 1.33em; font-weight: 400; color: var(--h5-color); margin-block: 0.8em 0.2em; }
-h6 { font-size: 1.23em; font-weight: 400; color: var(--h6-color); margin-block: 0.8em 0.2em; }
+h1 { font-size: 1.9em;  font-weight: 400; color: var(--h1-color); margin: 0; }
+h2 { font-size: 1.75em; font-weight: 400; color: var(--h2-color); margin: 0; }
+h3 { font-size: 1.61em; font-weight: 400; color: var(--h3-color); margin: 0; }
+h4 { font-size: 1.45em; font-weight: 400; color: var(--h4-color); margin: 0; }
+h5 { font-size: 1.33em; font-weight: 400; color: var(--h5-color); margin: 0; }
+h6 { font-size: 1.23em; font-weight: 400; color: var(--h6-color); margin: 0; }
+
+/* Subtle chevron-depth prefix to telegraph heading level at a glance */
+:is(h1, h2, h3, h4, h5, h6)::before {
+  margin-inline-end: 0.4em;
+  font-weight: 400;
+  opacity: 0.4;
+}
+h1::before { content: "\203a"; }
+h2::before { content: "\203a\203a"; }
+h3::before { content: "\203a\203a\203a"; }
+h4::before { content: "\203a\203a\203a\203a"; }
+h5::before { content: "\203a\203a\203a\203a\203a"; }
+h6::before { content: "\203a\203a\203a\203a\203a\203a"; }
 
 /* ── Inline text ─────────────────────────────────────────── */
 p  { margin-block: 0 var(--size-3); max-inline-size: var(--measure); }
