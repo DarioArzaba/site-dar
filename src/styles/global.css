@@ -451,12 +451,12 @@ details.callout > summary::-webkit-details-marker { display: none; }
      and on a visible collapsed parent when the active entry is hidden inside. */
   .toc-row:has(> a.toc-active)::after,
   .toc-collapsed.toc-has-active > .toc-row::after {
-    content: "\25C2";              /* ◂ */
+    content: "\2B23";              /* ⬣ horizontal black hexagon */
     flex: none;
-    margin-inline-start: 0;
+    margin-inline-start: 0.3em;
     align-self: center;
     color: var(--toc-marker);
-    font-size: 1.3em;
+    font-size: 1em;
     line-height: 1;
   }
 
