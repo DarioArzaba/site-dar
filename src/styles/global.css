@@ -11,6 +11,7 @@
   --ink-soft:    #5e6978;
   --ink-faint:   #7b8b8f;
   --accent:      #007ab3;
+  --toc-marker:  #d2453b;   /* active-section pointer (light: muted red) */
 
   /* Links external-link colors */
   --link:        #5536a3;
@@ -53,6 +54,7 @@
   --ink-soft:    #6f7a88;
   --ink-faint:   #798a8e;
   --accent:      #72c6ea;
+  --toc-marker:  #5ec46f;   /* active-section pointer (dark: green) */
 
   /* Links dark external-link colors */
   --link:        #bfacf1;
@@ -371,28 +373,102 @@ details.callout > summary::-webkit-details-marker { display: none; }
     pointer-events: none;
   }
 
-  .toc-list {
+  .toc-list,
+  .toc-list .toc-children {
     list-style: none;
     padding: 0;
     margin: 0;
     font-size: 0.74rem;
     line-height: 1.45;
   }
-  .toc-list li                  { margin-block: 0.18em; }
-  .toc-list li[data-level="H2"] { padding-inline-start: 0.75em; }
-  .toc-list li[data-level="H3"] { padding-inline-start: 1.5em; }
+  /* nested levels indent relative to their parent */
+  .toc-list .toc-children { padding-inline-start: 0.7em; }
+  .toc-list li { margin-block: 0.18em; }
+
+  /* each entry carries its heading's color */
+  .toc-list li[data-level="H1"] { --toc-color: var(--h1-color); }
+  .toc-list li[data-level="H2"] { --toc-color: var(--h2-color); }
+  .toc-list li[data-level="H3"] { --toc-color: var(--h3-color); }
+  .toc-list li[data-level="H4"] { --toc-color: var(--h4-color); }
+  .toc-list li[data-level="H5"] { --toc-color: var(--h5-color); }
+  .toc-list li[data-level="H6"] { --toc-color: var(--h6-color); }
+
+  /* row = [toggle chevron] + [link], baseline-aligned */
+  .toc-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0;
+  }
+  .toc-toggle {
+    flex: none;
+    width: 0.85em;
+    margin-inline-end: 0.15em;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--ink-faint);
+    font: inherit;
+    font-size: 1.2em;
+    line-height: 1;
+    cursor: pointer;
+    text-align: center;
+    transition: color 0.12s, transform 0.15s ease;
+  }
+  .toc-toggle::before { content: "\203a"; }          /* › */
+  .toc-leaf > .toc-row > .toc-toggle {
+    cursor: default;
+    visibility: hidden;                              /* keep alignment, no glyph */
+  }
+  /* expanded branches rotate the chevron to point down */
+  .toc-branch:not(.toc-collapsed) > .toc-row > .toc-toggle { transform: rotate(90deg); }
+  .toc-branch:hover > .toc-row > .toc-toggle { color: var(--ink); }
+  /* collapsed branch containing the active section: subtle accent hint */
+  .toc-collapsed.toc-has-active > .toc-row > .toc-toggle { color: var(--accent); }
+
+  /* collapse: hide children of collapsed branches */
+  .toc-collapsed > .toc-children { display: none; }
+
   .toc-list a {
     display: block;
+    min-width: 0;
+    flex: 0 1 auto;
     padding-block: 0.08em;
-    color: var(--ink-faint);
+    color: var(--toc-color, var(--ink-faint));
+    opacity: 0.68;
     text-decoration: none;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    transition: color 0.12s;
+    transition: opacity 0.12s, color 0.12s;
   }
-  .toc-list a:hover      { color: var(--ink); }
-  .toc-list a.toc-active { color: var(--accent); }
+  .toc-list a:hover { opacity: 1; }
+  /* the active entry AND its whole chain of parent headings light up */
+  .toc-list a.toc-active,
+  .toc-list .toc-has-active > .toc-row > a { opacity: 1; font-weight: 600; }
+
+  /* Extra active-section cue: a left-pointing marker right next to the text
+     (layers on top of the chevron/opacity). Shows on the active entry itself,
+     and on a visible collapsed parent when the active entry is hidden inside. */
+  .toc-row:has(> a.toc-active)::after,
+  .toc-collapsed.toc-has-active > .toc-row::after {
+    content: "\25C2";              /* ◂ */
+    flex: none;
+    margin-inline-start: 0;
+    align-self: center;
+    color: var(--toc-marker);
+    font-size: 1.3em;
+    line-height: 1;
+  }
+
+  /* Light theme: TOC text is small, so darken the heading colors and
+     lift the idle opacity for readable contrast against the light bg. */
+  :root:not([data-theme="dark"]) .toc-list a {
+    color: color-mix(in oklab, var(--toc-color, var(--ink-faint)), #000 28%);
+    opacity: 0.85;
+  }
+  :root:not([data-theme="dark"]) .toc-list a:hover,
+  :root:not([data-theme="dark"]) .toc-list a.toc-active,
+  :root:not([data-theme="dark"]) .toc-list .toc-has-active > .toc-row > a { opacity: 1; }
 }
 
 /* 4K: mirror the nav-inner padding growth so button and sidebar stay aligned */

@@ -10,22 +10,65 @@
     const btn     = document.getElementById('toc-toggle-btn');
     if (!sidebar || !list || !main) return;
 
-    const headings = Array.from(main.querySelectorAll('h1, h2, h3'));
+    const headings = Array.from(main.querySelectorAll('h1, h2, h3, h4, h5, h6'))
+      .filter(function (h) { return h.id; });
     if (headings.length < 2) { sidebar.style.display = 'none'; return; }
 
+    // Build a nested tree: each heading nests under the most recent heading
+    // of a shallower level (H1 < H2 < H3).
+    const stack = [{ level: 0, ul: list }];
     headings.forEach(function (h) {
-      if (!h.id) return;
       const clone = h.cloneNode(true);
       clone.querySelectorAll('[aria-hidden]').forEach(function (el) { el.remove(); });
       const label = clone.textContent.trim();
       if (!label) return;
+      const level = parseInt(h.tagName.slice(1), 10);
+
+      while (stack.length > 1 && stack[stack.length - 1].level >= level) stack.pop();
+      const parent = stack[stack.length - 1];
+
       const li = document.createElement('li');
       li.dataset.level = h.tagName;
+
+      const row = document.createElement('div');
+      row.className = 'toc-row';
+      const toggle = document.createElement('button');
+      toggle.type = 'button';
+      toggle.className = 'toc-toggle';
       const a = document.createElement('a');
       a.href = '#' + h.id;
       a.textContent = label;
-      li.appendChild(a);
-      list.appendChild(li);
+      row.appendChild(toggle);
+      row.appendChild(a);
+      li.appendChild(row);
+
+      const childUl = document.createElement('ul');
+      childUl.className = 'toc-children';
+      li.appendChild(childUl);
+
+      parent.ul.appendChild(li);
+      stack.push({ level: level, ul: childUl });
+    });
+
+    // Classify branches vs leaves; wire up collapse/expand (collapsed by default).
+    Array.from(list.querySelectorAll('li')).forEach(function (li) {
+      const childUl = li.querySelector(':scope > ul.toc-children');
+      const toggle  = li.querySelector(':scope > .toc-row > .toc-toggle');
+      if (childUl && childUl.children.length) {
+        li.classList.add('toc-branch', 'toc-collapsed');
+        toggle.setAttribute('aria-expanded', 'false');
+        toggle.setAttribute('aria-label', 'Toggle subsections');
+        toggle.addEventListener('click', function (e) {
+          e.preventDefault();
+          const collapsed = li.classList.toggle('toc-collapsed');
+          toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+        });
+      } else {
+        if (childUl) childUl.remove();
+        li.classList.add('toc-leaf');
+        toggle.setAttribute('aria-hidden', 'true');
+        toggle.tabIndex = -1;
+      }
     });
 
     const links = Array.from(list.querySelectorAll('a'));
@@ -37,9 +80,22 @@
         if (headings[i].offsetTop <= threshold) active = headings[i];
       }
       links.forEach(function (a) { a.classList.remove('toc-active'); });
+      list.querySelectorAll('.toc-has-active').forEach(function (el) {
+        el.classList.remove('toc-has-active');
+      });
       if (active) {
         const link = list.querySelector('a[href="#' + active.id + '"]');
-        if (link) link.classList.add('toc-active');
+        if (link) {
+          link.classList.add('toc-active');
+          // Hint that the active section lives inside a collapsed branch,
+          // without auto-expanding it (user expands manually).
+          let li = link.closest('li');
+          li = li && li.parentElement ? li.parentElement.closest('li') : null;
+          while (li) {
+            li.classList.add('toc-has-active');
+            li = li.parentElement ? li.parentElement.closest('li') : null;
+          }
+        }
       }
     }
     window.addEventListener('scroll', updateActive, { passive: true });

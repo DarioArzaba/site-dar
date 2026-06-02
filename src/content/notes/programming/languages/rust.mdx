@@ -6,7 +6,7 @@ summary: "Rust programming language"
 
 # Start
 
-## Install Rust
+## Install
 
 For Windows go to [Rust install page](https://rust-lang.org/tools/install/) and download the installer. For Unix systems install by downloading the `rustup` utility:
 
@@ -30,7 +30,7 @@ This will install rust in `$HOME/.cargo/bin` or `%USERPROFILE%\.cargo\bin`.
 > rustdoc --version
 > ```
 
-## Rust toolchain
+## Toolchain
 
 The installation tool `rustup` installs itself and three core tools: `rustc`, `rustdoc` and `cargo`. Rust is designed to be built and executed using `cargo` (it wraps the other two).
 
@@ -74,7 +74,7 @@ rustdoc src/lib.rs
 
 Build system and package manager. Used to create projects, resolve dependencies, compile and execute Rust.
 
-#### cargo new
+#### new
 
 Create a new cargo project.
 
@@ -93,7 +93,7 @@ cargo new my_lib --lib # To create a library project
 > └── target/         # Build artifacts (generated on build)
 > ```
 
-#### cargo check
+#### check
 
 Check if the project code will compile.
 
@@ -101,7 +101,7 @@ Check if the project code will compile.
 cargo check
 ```
 
-#### cargo build
+#### build
 
 Compile a project with all its dependencies. (invokes `rustc` with flags)
 
@@ -124,7 +124,7 @@ Resolves `Cargo.toml` crates and updates the `Cargo.lock` file, then invokes `ru
 > | `bench`   | `cargo build --profile bench`           | Full (opt-level=3)        | No, but include bench attributes         |
 > 
 
-#### cargo run
+#### run
 
 Build and then execute the resulting binary (invokes `rustc` with flags and executes).
 
@@ -142,7 +142,7 @@ cargo run            # Build + run (default dev build profile)
 > Test and bench execute the functions with `#[test]` and `#[bench]` attributes
 > 
 
-#### cargo doc
+#### doc
 
 Create the HTML documentation (invokes `rustdoc`).
 
@@ -275,7 +275,7 @@ dep_name = { version = "1", features = ["full"], optional=true }
 
 We can specify the source from which we fetch the crates.
 
-```toml#
+```toml
 [dependencies]
 dep_name = "1"                                                                        # Fetched from crates.io (default)
 dep_name = { version = "1", path = "../my_utils"}                                     # Fetched from local path
@@ -307,7 +307,7 @@ cargo build --features full
 cargo build --all-features
 ```
 
-#### Profiles 
+#### Profile
 
 You can override one of the compiler build profiles or create a custom one. This is mainly used to fine tune the release artifacts build process.
 
@@ -320,7 +320,7 @@ strip = "symbols"  # Strip debug symbols
 panic = "abort"    # Smaller binary with no unwinding
 ```
 
-#### Targets 
+#### Target
 
 The target is auto-detected by cargo but you can declare it explicitly. Note the double brackets since `toml` will treat it as an array of tables (a crate can produce multiple artifacts).
 
@@ -335,7 +335,7 @@ name = "perf"
 harness = false           # Also disable, nightly built-in bench harness
 ```
 
-#### Workspaces
+#### Workspace
 
 Some projects contain multiple crates, in this case the root `cargo.toml` can act as a workspace root file so that all members share a single `cargo.lock` file and `target/` directory. This improves build speeds and the project structure.
 
@@ -438,7 +438,7 @@ Signed go from $-(2^{n-1})$ to $2^{n-1}-1$. Unsigned go from $0$ to $2^n-1$. Sig
 The primary use for `isize/usize` is indexing collections. Literals accept `_` as a visual separator and type suffixes: Hex as `0xff`, octal as `0o77`, binary as `0b11110000` or byte as `b'A'` (u8 only). Dev and test artifacts include an overflow panic check, however release artifacts wrap overflows via two's complement. 
 
 
-### Overflow Methods
+### Overflow
 
 In debug (dev, test) normal arithmetic operators `+ - * /` will panic when overflown but silently wrap in release (releease, bench). If you expect overflow to happen you can explicitly handle it by calling an overflow method and the intended arithmetic operator (`_add`, `_sub`, `_mul`, `_div`, `_neg`, `_rem`, `_pow`, `_shl`, `_shr`, etc.).
 
@@ -461,7 +461,7 @@ fn main() {
 
 </div>
 
-### Scalar Types
+### Scalar
 
 <div class="bleed">
 
@@ -474,7 +474,7 @@ fn main() {
 
 </div>
 
-### Compound Types 
+### Compound
 
 <div class="bleed">
 
@@ -485,7 +485,7 @@ fn main() {
 
 </div>
 
-### Type Casting 
+### Casting 
 
 Rust never coerces between types implicitly, type casting is usually done explicitly with `as`. This defaults to truncating or wrapping on narrowing conversions (e.g i32 -> i8). 
 
@@ -523,6 +523,8 @@ fn function_name(arg1:type, arg2:type,...) -> ReturnType{
 }
 ```
 
+### Statement, Expression
+
 A function's body consists of **statements** and or **expressions**. Statements perform an action and return a unit touple (meaning no value), they end with a `;`. Expressions evaluate to a value they return, they have no trailing `;`.
 
 ```rust title:"main.rs - statements and expressions"
@@ -532,6 +534,8 @@ fn main() {
     println!("{}", y);
 }
 ```
+
+### Return Single
 
 You can annotate a function's return type with `->` and return a value explicitly with `return` or implicitly by ending the function's body with an expression.
 
@@ -550,6 +554,8 @@ fn main() {
     println!("{}", abs(-7));     // 7
 }
 ```
+
+### Return Multiple
 
 To return multiple values at the same time we can use a tuple and then destructure it at the call site.
 
