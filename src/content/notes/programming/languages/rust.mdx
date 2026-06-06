@@ -736,11 +736,1376 @@ State if true or false:
 4. Statements do not produce a result = true, statements evaluate to ().
 5. What is shadowing = rebinding an existing name, creates a fresh bind
 
+
 # Ownership
 
-# Structs
+## Principle
 
-# Packages
+All programs need to manage memory, here are some common strategies:
+
+- **Manual** (C/C++): the programmer allocates and frees explicitly. Fast but error-prone with leaks, double-frees, use-after-free.
+- **Garbage collected** (Go, Java, Python): a runtime periodically scans for unreachable memory and frees it. Safe, but adds overhead and unpredictable pauses.
+- **Ownership** (Rust): the compiler tracks who owns each value and inserts the deallocation calls at compile time. No runtime cost, no manual frees.
+
+The three rules of ownership enforced at compile time:
+
+1. Every value has exactly one **owner** (a variable).
+2. There can only be one owner at a time.
+3. When the owner goes out of scope, the value is **dropped** (memory freed).
+
+```rust title:"main.rs - scope"
+fn main() {
+    {
+        let s = String::from("hello");   // s owns the String
+        println!("{}", s);
+    }                                    // s out of scope → String dropped
+    // println!("{}", s);                // error: cannot find value `s`
+}
+```
+
+## Stack-Heap
+
+A running program uses two memory regions: the **stack** and the **heap**.
+
+The **stack** stores values in LIFO order (last in, first out). Push and pop are fast, just a pointer bump. Every value on the stack must have a size known at compile time.
+
+The **heap** stores values whose size is unknown at compile time or values that are expected to change at runtime. 
+
+Heap allocation first asks the allocator for a chunk of memory and returns a pointer, then access requires dereferencing that pointer. Both operations are slower than the stack push and pop.
+
+```mermaid
+graph LR
+    subgraph Stack
+        direction TB
+        S1[main frame]
+        S2[fn frame]
+        S3["string<br>ptr | len | cap"]
+    end
+    subgraph Heap
+        H1["[ h | e | l | l | o ]"]
+    end
+    S3 -.-> H1
+```
+
+## String
+
+Many Rust types live on the heap because their size can change at runtime: `String`, `Vec<T>`, `Box<T>`, and other custom types that contain them.
+
+### String Literal
+
+A **string literal** (`&str`) is a collection of char bytes that are hardcoded into the binary and loaded into read-only memory at startup. 
+
+They are lightweight and fast, but **immutable** and fixed in size.
+
+```rust
+let s: &str = "hello";   // string literal, immutable
+```
+
+> [!tip] Why &str instead of str
+>
+> `str` is a sequence of UTF-8 bytes of arbitrary length, notice its size is not known at compile time. Since values on the stack must have a known compile-time size, you can never own a bare `str` directly. You always hold it behind a pointer that tracks its length, and that pair is exactly what the reference `&str` does.
+
+### String Type
+
+A **`String`** is heap-allocated string that can grow at runtime.
+
+```rust title:"main.rs - String"
+fn main() {
+    let mut s = String::from("hello");
+    s.push_str(", world");
+    println!("{}", s);                  // hello, world
+}
+```
+
+### From
+
+`String::from` is an associated function on the `String` type, accessed with `::`. It asks the allocator for heap memory, copies the literal string into it, and returns ownership of the new `String` to the caller.
+
+Memory is returned automatically when the owner goes out of scope, Rust inserts a call to the type's `drop` method.
+
+```rust title:"main.rs - automatic drop"
+fn main() {
+    let s = String::from("hello");      // allocator gives heap memory
+}                                       // s out of scope → drop(s) → memory freed
+```
+
+### Components
+
+A `String` has three components on the stack, a pointer, a length, and a capacity, with the pointer at the start of the heap buffer.
+
+```mermaid
+graph LR
+    subgraph Stack
+        direction TB
+        P["ptr"]
+        L["len: 5"]
+        C["cap: 5"]
+    end
+    subgraph Heap
+        B["[ h | e | l | l | o ]"]
+    end
+    P --> B
+```
+
+- `len`: bytes currently used.
+- `cap`: bytes the heap buffer can hold before re-allocation.
+- `ptr`: address of the first byte.
+
+Each component is observable:
+
+```rust title:"main.rs - String internals"
+fn main() {
+    let s = String::from("hello");
+    println!("ptr = {:p}", s.as_ptr());
+    println!("len = {}",   s.len());
+    println!("cap = {}",   s.capacity());
+}
+```
+
+The pointer might be different on every run because the OS uses **address-space layout randomisation (ASLR)** to make heap addresses unpredictable, a security measure against memory exploits.
+
+## Move
+
+Reassigning a non-`Copy` value (like `String`) to another variable **moves** the stack components, causing the original `String` variable to become invalid, now only the new variable one can reference the value.
+
+**Before** `let s2 = s1;`:
+
+```mermaid
+graph LR
+    subgraph Stack1["Stack"]
+        A1["s1<br>ptr | len: 5 | cap: 5"]
+    end
+    subgraph Heap1["Heap"]
+        B1["[ h, e, l, l, o ]"]
+    end
+    A1 --> B1
+```
+
+**After** `let s2 = s1;`:
+
+```mermaid
+graph LR
+    subgraph Stack2["Stack"]
+        A2["s1 (invalid)"]
+        A3["s2<br>ptr | len: 5 | cap: 5"]
+    end
+    subgraph Heap2["Heap"]
+        B2["[ h, e, l, l, o ]"]
+    end
+    A3 --> B2
+```
+
+The heap buffer remains untouched, only the three-word stack handle is transferred. Using `s1` after the move is a compile error: `borrow of moved value: s1`.
+
+```rust title:"main.rs - move"
+fn main() {
+    let s1 = String::from("hello");
+    let s2 = s1;
+    // println!("{}", s1);              // error: borrow of moved value
+    println!("{}", s2);                 // ok
+}
+```
+
+This rule keeps exactly one owner, which guarantees `drop` runs exactly once on the heap buffer (no double-frees).
+
+### Heap Parameters
+
+Passing a `String` to a function moves ownership in. Returning one moves ownership out.
+
+```rust title:"main.rs - moves across functions"
+fn takes(s: String) {
+    println!("{}", s);
+}                                       // s dropped here
+
+fn gives() -> String {
+    String::from("world")               // ownership moved to caller
+}
+
+fn main() {
+    let s = String::from("hello");
+    takes(s);
+    // println!("{}", s);               // error: s was moved
+    let s = gives();                    // shadow with the returned String
+    println!("{}", s);
+}
+```
+
+## Clone
+
+When you genuinely need a deep copy of the heap and stack, call `.clone()`. This allocates a fresh heap buffer, copies the contents, and returns a new independent owner.
+
+```rust title:"main.rs - clone"
+fn main() {
+    let s1 = String::from("hello");
+    let s2 = s1.clone();
+    println!("s1 = {}, s2 = {}", s1, s2);   // both valid
+}
+```
+
+```mermaid
+graph LR
+    subgraph Stack
+        direction TB
+        A1["s1<br>ptr | len | cap"]
+        A2["s2<br>ptr | len | cap"]
+    end
+    subgraph Heap
+        B1["[ h, e, l, l, o ]"]
+        B2["[ h, e, l, l, o ]"]
+    end
+    A1 --> B1
+    A2 --> B2
+```
+
+Cloning is always an explicit operation, it never happens implicitly by Rust. Seeing `.clone()` in code means that a new heap allocation just happened.
+
+## Copy
+
+Primitive types (`i32`, `f64`, `bool`, `char`, and tuples containing only `Copy` types) implement the **`Copy` trait**. Assigning a `Copy` type to another variable duplicates the bits on the stack (both variables remain valid).
+
+```rust title:"main.rs - copy"
+fn main() {
+    let x = 5;
+    let y = x;
+    println!("x = {}, y = {}", x, y);   // both valid
+}
+```
+
+`Copy` types have no heap component, so duplicating the stack is enough. Calling `.clone()` on a `Copy` type does essentially the same operation as the assignment.
+
+A type cannot have the `Copy` trait and own heap data, this would introduce a risk of double freeing the memory for both copies.
+
+## References
+
+If a function needs to read a `String` value without taking ownership you can pass a **reference** instead with `&`.
+
+```rust title:"main.rs - reference"
+fn len(s: &String) -> usize {
+    s.len()
+}
+
+fn main() {
+    let s = String::from("hello");
+    let n = len(&s);
+    println!("'{}' has {} bytes", s, n);   // s still valid
+}
+```
+
+A reference is a pointer that does **not** own the data. When the reference goes out of scope, nothing is dropped, only the owner can drop the data.
+
+```mermaid
+graph LR
+    subgraph Stack
+        direction TB
+        S["s<br>ptr | len | cap"]
+        R["r: &s"]
+    end
+    subgraph Heap
+        B["[ h, e, l, l, o ]"]
+    end
+    S --> B
+    R --> S
+```
+
+## Borrowing
+
+Using a reference is called **borrowing**, there are two flavors:
+
+| Reference | Syntax | Mutable? | How many at once? |
+|-----------|--------|----------|-------------------|
+| Shared / immutable | `&T` | No | Any number |
+| Exclusive / mutable | `&mut T` | Yes | Exactly one, with no shared references coexisting |
+
+This are the **borrowing rules**, enforced at compile time:
+
+- At any point: either one `&mut T`, **or** any number of `&T` can exist but never both.
+- All references must point to valid data (no dangling references).
+
+These rules prevent data races and use-after-free, statically.
+
+```rust title:"main.rs - immutable borrow rejected"
+fn add_world(s: &String) {
+    // s.push_str(", world");           // error: cannot borrow since reference is immutable
+}
+```
+
+```rust title:"main.rs - mutable borrow"
+fn add_world(s: &mut String) {
+    s.push_str(", world");
+}
+
+fn main() {
+    let mut s = String::from("hello");
+    add_world(&mut s);
+    println!("{}", s);                  // hello, world
+}
+```
+
+To pass a mutable reference, *three* things must align: the variable must be declared `let mut`, the call site must say `&mut s`, and the parameter must be `&mut T`.
+
+## Slices
+
+A **slice** is a reference to a contiguous subsequence of a collection, it is a range or window, usually not the whole thing. Like any reference, a slice does not own the data.
+
+For strings the slice type is `&str`; for arrays/vecs it's `&[T]`.
+
+```rust title:"main.rs - string slice"
+fn main() {
+    let s = String::from("hello world");
+
+    let hello = &s[0..5];               // "hello"
+    let world = &s[6..11];              // "world"
+
+    let hello = &s[..5];                // start can be omitted (= 0)
+    let world = &s[6..];                // end can be omitted (= s.len())
+    let whole = &s[..];                 // both omitted = full slice
+}
+```
+
+Internally a slice is a pointer + a length, pointing into the middle of the original buffer.
+
+```mermaid
+graph LR
+    subgraph Stack
+        direction TB
+        S["s: String<br>ptr | len: 11 | cap: 11"]
+        W["world: &str<br>ptr | len: 5"]
+    end
+    subgraph Heap
+        B["h | e | l | l | o | _ | w | o | r | l | d"]
+    end
+    S --> B
+    W -.-> B
+```
+
+(The `world` slice's pointer points to index 6 of the same buffer.)
+
+> [!Warning] String slices
+> 
+> Note that a slice index refers to a byte offset in the buffer, not a character offset. Slicing in the middle of a multi-byte UTF-8 character will panic at runtime.
+
+## Reference Preference
+
+Functions should generally accept `&str` rather than `&String`. `&str` references are more general since they point directly to the char bytes with their pointer and length components, everything needed to refer to a string literal, a heap buffer owned by a String (coerced into `&str` by Rust), or a slice of either. 
+
+On the other hand a `&String`, with its three component stack handle (pointer, length and capacity) can only point to an existing `String` heap buffer, that when used as a parameter would be auto-coerced to `&str` anyway.
+
+```rust title:"main.rs - first word"
+fn first_word(s: &str) -> &str {
+    for (i, &b) in s.as_bytes().iter().enumerate() {
+        if b == b' ' { return &s[..i]; }
+    }
+    s
+}
+
+fn main() {
+    let owned = String::from("hello world");
+    println!("{}", first_word(&owned));     // hello — from a String
+    println!("{}", first_word("ok"));       // ok    — from a literal
+}
+```
+
+
+```mermaid
+graph LR
+    subgraph "&str — one hop"
+        direction TB
+        A1["&str<br>ptr | len"] --> A2["[ h, e, l, l, o ]"]
+    end
+    subgraph "&String — two hops"
+        direction TB
+        B1["&String"] --> B2["String<br>ptr | len | cap"] --> B3["[ h, e, l, l, o ]"]
+    end
+```
+
+## Questions
+
+List the rules of ownership.
+
+> [!check]- Answer
+>
+> 1. Every value has exactly one owner (a variable).
+> 2. There can only be one owner at a time.
+> 3. When the owner goes out of scope, the value is dropped.
+
+Stack vs heap, when and why?
+
+> [!check]- Answer
+>
+> Stacks for fixed-size values known at compile time. Allocation is a pointer bump (fast); deallocation is automatic when the function frame pops (fast). Accessed directly, no indirection.
+>
+> Heaps for dynamically sized or growable values. Allocation asks the allocator for a chunk (slower); access requires dereferencing a pointer (slower). Freed when the owning value is dropped.
+
+Write a `first_word` function: This is a function that takes a `&String` reference and returns a reference to the first word of the value.
+
+> [!check]- Answer
+> ```rust
+> fn first_word(s: &String) -> &str {
+>     for (i, &b) in s.as_bytes().iter().enumerate() {
+>         if b == b' ' { return &s[..i]; }
+>     }
+>     &s[..]
+> }
+> ```
+> A more idiomatic signature would use `&str` instead of `&String`, since it will coerce to `&str` anyway:
+> ```rust
+> fn first_word(s: &str) -> &str {
+>     match s.find(' ') {
+>         Some(i) => &s[..i],
+>         None    => s,
+>     }
+> }
+> ```
+
+Two ways of working with strings
+
+> [!check]- Answer
+> - **String literals** (`&str`): immutable, fixed at compile time, embedded in the binary.
+> - **String**: heap-allocated, mutable, can grow at runtime.
+
+True or false
+
+1. `let x = 5;` stores `x` on the heap. = False, it is a copy living on the stack.
+2. After `let x = 5; let y = x;`, `x` is no longer usable. = False, it is a copy so the bits are duplicated.
+3. After `let s1 = String::from("hello"); let s2 = s1;`, `s1` is no longer usable = True, it is not a copy so ownership is moved.
+4. You may have one `&mut` and one `&` to the same `String` in the same scope. = False, a mutable borrow excludes other borrows for its lifetime.
+5. You may have multiple `&` to the same `String` in the same scope. = True, shared borrows is allowed provided none are mutable.
+
+# Structs, Enums, Collections
+
+## Structs
+
+Structs are group named, typed fields under a single type. Similar to tuples, but with fields that have names so access is order-independent. We use `struct` to define the template, create an instance of the struct template and then we can access the fields with dot notation.
+
+```rust title:"struct"
+struct Student {
+    name: String,
+    id: String,
+    age: u8,
+    class: u8,
+}
+
+let student1 = Student {
+    name: String::from("Jose"),
+    age: 20,
+    id: String::from("2023Student12345"),
+    class: 10,
+};
+
+println!("class = {}", student1.class);
+```
+
+To mutate fields, the binding must be `mut`. Rust mutates the whole struct or none of it, you can't have some fields mutable and some not.
+
+```rust title:"struct mut"
+let mut student2 = Student {
+    name: String::from("Jose"),
+    age: 20,
+    id: String::from("2023Student12345"),
+    class: 10,
+};
+student2.class += 1;
+```
+
+### Init Shorthand
+
+When a function parameter and a field share their name, we can drop the `name: name` repetition:
+
+```rust title:"struct init shorthand"
+fn create_student(name: String, id: String) -> Student {
+    Student { name, id, age: 20, class: 10 }
+}
+
+let student4 = create_student(
+    String::from("Ivy"),
+    String::from("2023Student12347"),
+);
+```
+
+### Struct Update Syntax
+
+Copy the remaining fields from another instance with `..other`:
+
+```rust title:"struct update syntax"
+let student6 = Student {
+    name: String::from("Dar"),
+    id: String::from("2023Student12349"),
+    ..student5
+};
+```
+
+> [!warning]- This syntax moves the non-copy fields
+>
+> `..student5` **moves** the unspecified fields out of `student5`. For non-`Copy` fields like `String`, this means `student5.name` is no longer usable afterward. If you want a copy, derive `Clone` and call it explicitly, or override every owned field.
+
+### Tuple Structs
+
+A named struct with unnamed, positional fields. Useful when labels would add noise (3D points, RGB colors). Access by position with `.0`, `.1`, `.2`.
+
+```rust title:"tuple struct"
+struct Point3D(i32, i32, i32);
+let p = Point3D(10, 5, -10);
+println!("x = {}", p.0);
+```
+
+### Methods
+
+Methods are functions attached to a type. They live inside an `impl` block and take `self` as the first parameter. We can have multiple `impl` blocks attached to the same type. Methods are called with dot notation:
+
+- `&self` — read-only borrow (most common)
+- `&mut self` — mutable borrow (mutating methods)
+- `self` — takes ownership, consuming the instance
+
+```rust title:"methods"
+impl Student {
+    fn name(&self) -> &str {
+        &self.name
+    }
+    fn promote(&mut self, new_class: u8) {
+        self.class = new_class;
+    }
+    fn print(&self) {
+        println!(
+            "Student: name = {}, age = {}, id = {}, class = {}",
+            self.name, self.age, self.id, self.class
+        );
+    }
+}
+
+let mut student7 = Student {
+    name: String::from("Jose"),
+    age: 20,
+    id: String::from("2023EE1234"),
+    class: 10,
+};
+student7.promote(11);
+student7.print();
+```
+
+### Associated Functions
+
+Associated functions live in the same `impl` block but take no `self`, they're tied to the type, not an instance. Associated functions are called with `::`. A natural example would be a constructor:
+
+```rust title:"associated fn"
+// We are using "Self" here as an alias for "Student"
+// This keeps the constructor generic
+impl Student {
+    fn new(name: String, id: String) -> Self {
+        Self { name, id, age: 20, class: 10 }
+    }
+}
+
+let student8 = Student::new(
+    String::from("Jose"),
+    String::from("2023EE3214"),
+);
+```
+
+## Enums
+
+An enum defines a type whose value is exactly one of a fixed set of variants. Each variant can carry different data (or none).
+
+```rust title:"enum"
+#[derive(Debug)]
+enum Location {
+    UnitedStates(String),
+    India(String),
+    Singapore(String),
+}
+
+#[derive(Debug)]
+struct Student {
+    name: String,
+    id: String,
+    age: u8,
+    class: u8,
+    location: Location,
+}
+
+let blr = Location::India(String::from("Bangalore"));
+
+let student9 = Student {
+    name: String::from("Carlo"),
+    age: 7,
+    id: String::from("2023EE123"),
+    class: 2,
+    location: blr,
+};
+println!("student : {:?}", student9);
+```
+
+> [!tip] `#[derive(Debug)]`
+>
+> The `{:?}` placeholder needs a `Debug` impl. Adding `#[derive(Debug)]` auto-generates one. Other common derives: `Clone`, `Copy`, `PartialEq`, `Eq`, `Hash`.
+
+Use an **enum** when each instance is a mutually exclusive state and the carried data, fields and values differ per state. Use a **struct** when every instance has the same set of fields (even if their value changes). A natural example of this would be a user login state:
+
+```rust title:"enum: login result"
+enum LoginResult {
+    Success { user_id: u64, token: String },
+    InvalidCredentials,
+    RateLimited { retry_after_seconds: u32 },
+    ServerError(String),
+}
+```
+
+The struct version of the same thing forces optional or nullable fields and admits invalid states (`success: false` with a token set, etc.):
+
+```rust title:"struct version (bad)"
+struct LoginResult {
+    success: bool,
+    user_id: Option<u64>,
+    token: Option<String>,
+    rate_limited: bool,
+    retry_after_seconds: Option<u32>,
+    error_message: Option<String>,
+}
+```
+
+Enums are closed entities meaning that only the defining crate can add variants. If you need an enum-like object that can be extended by a third-party crate use a `trait` instead.
+
+### Pattern Matching
+
+Enums pair with `match` for exhaustive handling. Adding a new variant forces every `match` to be updated, the compiler will refuse to build until they are.
+
+```rust title:"match"
+match result {
+    LoginResult::Success { user_id, token } => {
+        println!("welcome {user_id}, token: {token}");
+    }
+    LoginResult::InvalidCredentials => println!("wrong password"),
+    LoginResult::RateLimited { retry_after_seconds } => {
+        println!("wait {retry_after_seconds}s");
+    }
+    LoginResult::ServerError(msg) => println!("error: {msg}"),
+}
+
+// If we add another variant to LoginResult this match 
+// will fail to compile until we handle it 
+```
+
+For quick single-variant checks, `if let` is shorter:
+
+```rust title:"if let"
+if let LoginResult::Success { user_id, .. } = result {
+    println!("logged in as {user_id}");
+}
+```
+
+### Option Enum
+
+Rust has no null, instead there is an `Option<T>` enum defined by the standard library that can be in a `Stome<T>` state or a `None` state (similar to null).
+
+```rust
+enum Option<T> {
+    Some(T),
+    None,
+}
+```
+
+```rust title:"option example"
+fn divide(num: i32, den: i32) -> Option<i32> {
+    if den == 0 { None } else { Some(num / den) }
+}
+```
+
+### Result Enum 
+
+For fallible operations that might produce an error, use `Result<T, E>` instead:
+
+```rust
+enum Result<T, E> {
+    Ok(T),
+    Err(E),
+}
+```
+
+```rust title:"result example"
+fn parse_age(s: &str) -> Result<u8, std::num::ParseIntError> {
+    s.parse::<u8>()
+}
+```
+
+### Unwrapping
+
+The ? operator unwraps `Ok/Some` or returns the `Err/None` early. It only works inside a function whose return type is a `Result` or `Option`. 
+
+```rust title:"Manual match handling"
+fn read_age(s: &str) -> Result<u8, std::num::ParseIntError> {
+    let age = match s.parse::<u8>() {
+        Ok(n) => n,
+        Err(e) => return Err(e),
+    };
+    Ok(age)
+}
+```
+
+```rust title:"Unwrapping operator"
+fn read_age(s: &str) -> Result<u8, std::num::ParseIntError> {
+    let age = s.parse::<u8>()?;
+    Ok(age)
+}
+```
+
+This chains cleanly across multiple fallible calls (to handle error propagation):
+
+```rust title:"chain unwrapping Result"
+
+use std::fs;
+use std::io;
+
+fn first_line(path: &str) -> Result<String, io::Error> {
+    // read_to_string will return another Result<String, io::Error>
+    // Return the Error early if we cant read file
+    // Else store the Ok String
+    let contents = fs::read_to_string(path)?;
+    println!("read {} bytes from {}", contents.len(), path);
+    // At this point we know that we have the file contents 
+    // Since we haven't returned an error early 
+    // Now try to store the first line and return that (Ok) 
+    // (No error handling needed at this point)
+    let line = contents.lines().next().unwrap_or("");
+    Ok(line.to_string())
+}
+
+fn main() {
+    // success path: file exists, ? unwraps the Ok
+    // The function finishes executing completely
+    match first_line("config.toml") {
+        Ok(line) => println!("first line: {line}"),
+        Err(e)   => println!("failed: {e}"),
+    }
+
+    // error path: file missing, ? returns the io::Error early
+    match first_line("does_not_exist.toml") {
+        Ok(line) => println!("first line: {line}"),
+        Err(e)   => println!("failed: {e}"),
+    }
+}
+```
+
+Works on Option too:
+
+```rust title:"chain unwrapping Option"
+fn first_char_upper(s: &str) -> Option<char> {
+    // chars().next() will return another Option<char>
+    // Return the None early if there is no first char 
+    // Else store the Some char 
+    let c = s.chars().next()?;
+    println!("first char of '{s}' is '{c}'");
+    
+    // At this point we know that there is a first char 
+    // Since we haven't returned the None early 
+    // Now try to return that Some char as uppercase 
+    Some(c.to_ascii_uppercase())
+}
+
+fn main() {
+    // Success path: first char exists, ? unwraps the char
+    // The function finishes executing completely
+    if let Some(upper) = first_char_upper("hello") {
+        println!("uppercase: {upper}");  // 'H'
+    }
+
+    // None path: empty string, next() is None, ? returns None early
+    match first_char_upper("") {
+        Some(upper) => println!("uppercase: {upper}"),
+        None        => println!("string was empty"),
+    }
+}
+
+}
+```
+
+[!note] ? will coerce inner error types
+For Result, ? calls From::from on the error before returning it. The inner error type can differ from the function's error type as long as a From `impl` exists to handle this (this is how custom error enums and anyhow crate work).
+
+## Collections
+
+Heap-allocated, growable containers. Three you'll use constantly: `Vec<T>`, `String`, `HashMap<K, V>`.
+
+### Vector
+
+A growable array. Contiguous in memory, fast push/pop at the end. Created with `Vec::new()` (type annotation required when empty) or the `vec!` macro (type inferred).
+
+```rust title:"vec create"
+let mut v1: Vec<i32> = Vec::new();
+let mut v2 = vec![2.5, 10.5, 1.0];
+```
+
+When using `push` and `pop` to mutate the end, the vector binding must be `mut`:
+
+```rust title:"vec push/pop"
+v1.push(5);
+v1.push(6);
+v1.push(7);
+v2.pop();
+println!("v1 = {:?}, v2 = {:?}", v1, v2);
+```
+
+We can either access by index (panics on out-of-bounds) or even better use the `.get()` method that safelyu returns an `Option<&T>`:
+
+```rust title:"vec access"
+let first = v1[0];               // panics if empty
+let maybe_first = v1.get(0);     // Option<&i32>
+if let Some(x) = maybe_first {
+    println!("{x}");
+}
+```
+
+A common pattern is to iterate a vector with a borrow:
+
+```rust title:"vec iterate"
+for x in &v1 { println!("{x}"); }
+for x in &mut v1 { *x += 1; }
+```
+
+> [!warning] Vectors - No mutation while borrowed
+>
+> You can't `push` to a `Vec` while holding a reference into it, this is because pushing may reallocate the buffer, invalidating the reference. The borrow checker catches this at compile time.
+>
+> ```rust
+> let mut v = vec![1, 2, 3];
+> let first = &v[0];      // v is borrowed as immutable reference 
+> v.push(4);              // error: cannot borrow `v` as mutable because you are already holding a non-mutable reference into it 
+> println!("{first}");    // the non-mutable borrow is live
+> ```
+>
+> Fix by ending the borrow before mutating — copy the value out if the type is `Copy`, or scope the reference:
+>
+> ```rust
+> let mut v = vec![1, 2, 3];
+> let first = v[0];       // i32 is Copy, value moves out of the vector, no borrow held
+> v.push(4);              // No immutable reference held, we can update the mutable vector 
+> println!("{first}");
+> ```
+
+
+### String
+
+See [Strings intro](/notes/programming/languages/rust/#string). 
+
+As discussed earlier Strings are heap-allocated, UTF-8 encoded, growable collections backed by a `Vec<u8>`. Their borrowed counterpart is `&str`.
+
+```rust title:"string create"
+let s1 = String::new();
+let s2 = String::from("hello");
+let s3 = "hello".to_string();
+let s4 = format!("{}-{}", s2, s3);
+```
+
+Push a single `char` with `push`, a slice with `push_str`. Concatenate with `+` (consumes the left operand) or `format!` (borrows, no ownership):
+
+```rust title:"string mutate"
+let mut s = String::from("hello");
+s.push(' ');
+s.push_str("world");
+
+let combined = s + "!";                  // s is moved
+let f = format!("{} {}", "hello", "world");
+```
+
+### HashMap
+
+Unordered key-value store. Keys are unique; insertion order is not preserved. Import from the standard library:
+
+```rust title:"hashmap create"
+use std::collections::HashMap;
+
+let mut cities: HashMap<String, u32> = HashMap::new();
+cities.insert(String::from("San Jose"), 1_000_000);
+cities.insert(String::from("San Jose"), 1_030_000);  // overwrites
+```
+
+Just like in vectors it is generally prefered to use `get` to returns an `Option<&V>` with the value from a key:
+
+```rust title:"hashmap get"
+if let Some(pop) = cities.get("San Jose") {
+    println!("population: {pop}");
+}
+```
+
+Remove a value with `.remove(key)`. Like in vectors you can also iterate the pairs with a for loop and a borrow:
+
+```rust title:"hashmap iterate"
+cities.remove("San Jose");
+for (city, pop) in &cities {
+    println!("{city}: {pop}");
+}
+```
+
+The best way to insert a value if missing is with the `entry` function:
+
+```rust title:"hashmap entry"
+use std::collections::HashMap;
+ 
+let mut counts: HashMap<&str, i32> = HashMap::new();
+ 
+// entry("alice") returns an Entry enum: Occupied (key present) or Vacant.
+// or_insert(0) returns a &mut i32:
+//   - if Vacant, inserts 0 and returns &mut to the new value
+//   - if Occupied, returns &mut to the existing value (or_insert is a no-op)
+// * dereferences the &mut so we can assign through it.
+*counts.entry("alice").or_insert(0) += 1;   // alice not present -> insert 0, then +1 -> 1
+*counts.entry("alice").or_insert(0) += 1;   // alice present (1) -> +1 -> 2
+*counts.entry("bob").or_insert(0) += 1;     // bob not present -> insert 0, then +1 -> 1
+ 
+println!("{counts:?}");   // {"alice": 2, "bob": 1}
+```
+
+A concrete example of the use of `entry` is to count the word occurrences of a string in one pass:
+
+```rust title:"word count"
+let text = "the quick the brown the";
+let mut counts: HashMap<&str, i32> = HashMap::new();
+ 
+for word in text.split_whitespace() {
+    *counts.entry(word).or_insert(0) += 1;
+}
+println!("{counts:?}"); // {"the":3, "quick":1, "brown":1}
+```
+
+> [!warning] Ownership on insert
+>
+> Inserting an owned value (`String`) moves it into the map and will now be owned by the map. Inserting a reference is valid but it requires the reference to outlive the map (else a pair in the map would become invalid).
+
+## Questions
+
+Write a `Rectangle` struct (four sides, opposite sides equal, internal angles right). Add an associated function `new` that takes length and width and returns a `Rectangle`.
+
+> [!answer]- Answer 
+>
+> ```rust
+> struct Rectangle {
+>     length: f64,
+>     width: f64,
+> }
+>
+> impl Rectangle {
+>     fn new(length: f64, width: f64) -> Self {
+>         Self { length, width }
+>     }
+> }
+> ```
+
+Add an `area` method to `Rectangle`.
+
+> [!answer]- Answer
+> 
+> ```rust
+> impl Rectangle {
+>     fn area(&self) -> f64 {
+>         self.length * self.width
+>     }
+> }
+> ```
+
+True or false:
+
+1. The first parameter of a method in a struct is `&self`. = True, methods are bound to an instance. 
+2. The first parameter of an associated function of a struct is `&self`. = False, associated fn have no instance.
+3. A `HashMap` stores elements in insertion order. = False, it is unordered 
+4. A `Vec` stores elements in insertion order. = True, vector preserves insertion order 
+5. Type annotation is required for an empty vector created with `vec![]`. = False, required for `new()` but inferred for `vec!`
+6. In Rust, all chars of a `String` are of equal byte length. = False, UTF-8 are 1 to 4 bytes wide 
+
+# Module System
+
+Rust has a module system for organizing code at scale, built from four nested concepts: **workspaces**, **packages**, **crates**, and **modules**. Paths are how you reach into them.
+
+```mermaid
+graph TD
+    W[Workspace] --> P1[Package]
+    W --> P2[Package]
+    P1 --> C1[Library Crate]
+    P1 --> C2[Binary Crate]
+    P1 --> C3[Binary Crate]
+    C1 --> M1[Module]
+    C1 --> M2[Module]
+    M1 --> S1[Submodule]
+    M1 --> S2[Submodule]
+```
+
+## Workspaces
+
+A workspace is a top-level project containing multiple packages that share a `Cargo.lock` and a single `target/` build directory. Defined by a root `Cargo.toml` with a `[workspace]` table:
+
+```toml title:"workspace Cargo.toml"
+[workspace]
+members = ["auth", "api", "shared"]
+```
+
+Useful when a project naturally splits into several packages that depend on each other. Skip this layer for single-package projects.
+
+## Packages
+
+A package is a collection of crates that together provide a related set of functionality. Defined by the presence of a `Cargo.toml` declaring dependencies and metadata.
+
+Packages are managed by `cargo` (`cargo new`, `cargo build`, `cargo test`, `cargo publish`). See the [Cargo Intro](/notes/programming/languages/rust/#cargo) for command details.
+
+- A package must contain **at least one** crate (library or binary).
+- A package can contain **at most one** library crate.
+- A package can contain **any number** of binary crates.
+
+Default file layout:
+
+```
+my_project/
+├── Cargo.toml
+└── src/
+    ├── main.rs        # default binary crate root
+    ├── lib.rs         # default library crate root (only if present)
+    └── bin/
+        ├── exampleone.rs   # additional binary crate 
+        └── exampletwo.rs  # additional binary crate
+```
+
+Cargo finds these additional binary crates by convention, no `[[bin]]` entries needed for files in `src/bin/`.
+
+## Crates
+
+A crate is the unit of compilation. It produces either a binary artifact (executable) or a library artifact (`.rlib` for reuse). `rustc` defaults to binary; in practice you'll drive everything through `cargo` rather than calling `rustc` directly.
+
+### Binary Crate
+
+A standalone executable with a `main()` entry point. The crate root is `src/main.rs` by default. Additional binaries go in `src/bin/*.rs` (each file is its own crate). Override the defaults in `Cargo.toml` when needed:
+
+```toml title:"custom binary"
+[[bin]]
+name = "my-binary-crate"
+path = "src/main.rs"
+```
+
+### Library Crate
+
+A reusable collection of items without `main()`, there is no entry point. The crate root is `src/lib.rs`. Items are private by default but you can expose them with `pub` prefix:
+
+```rust title:"src/lib.rs"
+pub fn greet(name: &str) -> String {
+    format!("hello, {name}")
+}
+
+pub struct Greeter {
+    pub prefix: String,
+}
+```
+
+A binary in the same package can consume the library by its package name:
+
+```rust title:"src/main.rs"
+use my_project::greet;
+
+fn main() {
+    println!("{}", greet("Ivy"));
+}
+```
+
+```
+my_project/
+├── Cargo.toml
+└── src/
+    ├── lib.rs    # library crate
+    └── main.rs   # binary crate, depends on the library
+```
+
+```shell
+$ cargo run
+   Compiling my_project v0.1.0
+    Finished dev profile
+     Running `target/debug/my_project`
+hello, Ivy
+```
+
+## Modules
+
+Modules group related code inside a crate and control visibility. They're declared with `mod` and are private by default. Items inside a module (functions, types, even other modules) are also private by default, you need to add `pub` to expose them.
+
+### Inline Modules
+
+The whole module body lives in the same file:
+
+```rust title:"inline module"
+mod auth {
+    pub fn sign_in(user: &str) -> String {
+        format!("token-for-{user}")
+    }
+
+    fn hash_password(_pw: &str) -> String {
+        // private helper, not visible outside `auth`
+        String::from("...")
+    }
+
+    pub mod session {
+        pub fn start() {
+            println!("session started");
+        }
+    }
+}
+
+fn main() {
+    let token = auth::sign_in("alice");
+    auth::session::start();
+    println!("token: {token}");
+}
+```
+
+There's no hard limit on how many modules can live in one file, but in practice you split them across files.
+
+### Separate File Modules
+
+A `mod foo;` declaration tells Rust to find the module's source in a file named `foo.rs` next to the current file and if `foo` has submodules `mod submodule` it will be able to find them as `foo/submodule.rs`. 
+ 
+```
+parent.rs        ← declares `mod foo;`
+foo.rs           ← the `foo` module file. `mod bar` resolves `foo/bar.rs`
+foo/             ← folder for foo's submodules
+└── bar.rs       ← submodule `foo::bar`
+```
+ 
+Applied to the `auth` example with `login` and `session` submodules:
+ 
+```rust title:"src/lib.rs"
+pub mod auth;     // -> Rust finds src/auth.rs
+ 
+pub fn version() -> &'static str {
+    "1.0.0"
+}
+ 
+pub fn login_user(user: &str, password: &str) -> Result<String, String> {
+    auth::login::sign_in(user, password)
+}
+```
+ 
+```rust title:"src/auth.rs"
+pub mod login;    // -> Rust finds src/auth/login.rs
+pub mod session;  // -> Rust finds src/auth/session.rs
+ 
+pub fn is_valid(token: &str) -> bool {
+    !token.is_empty()
+}
+```
+ 
+```rust title:"src/auth/login.rs"
+pub fn sign_in(user: &str, password: &str) -> Result<String, String> {
+    if password == "secret" {
+        Ok(format!("token-for-{user}"))
+    } else {
+        Err(String::from("invalid credentials"))
+    }
+}
+```
+ 
+Pre-2018 Rust code used `auth/mod.rs` (the module file inside the folder) instead of resolving to an `auth.rs` file next to it. Both still compile, but new code should use the file-next-to-folder style as it keeps the module declaration visible alongside its submodules.
+ 
+### Visibility
+ 
+`pub` makes an item visible outside its module. Finer-grained variants:
+ 
+| Modifier              | Visible to                                  | Main uses |
+|-----------------------|---------------------------------------------|---|
+| (none)                | Defining module only                        | For module-local helpers. Implementation is hidden. |
+| `pub`                 | Everywhere (including external consumers)   | For the actual API surface, in a library this is a contract, changing it could be a breaking change |
+| `pub(crate)`          | Anywhere in the current crate               | For crate-local code. If there is no need to share externally use this |
+| `pub(super)`          | The parent module                           | Uncommon, used when a child has a helper that its immediate parent needs but that siblings should not be able to access. |
+| `pub(in path)`        | A specific module path within the crate     | Uncommon, used in large libraries that are scoping to a specific subtree. |
+ 
+```rust title:"visibility modifiers"
+mod db {
+    pub(crate) fn connect() { /* visible anywhere in this crate */ }
+    pub(super) fn migrate() { /* visible only to the parent module */ }
+    fn vacuum()              { /* private to `db` */ }
+}
+```
+
+> [!tip] Remember thet widening visibility is trivial but tightening after the fact might break callers.
+
+## Paths
+ 
+A path identifies an item (function, struct, enum, module) for use elsewhere. Two forms:
+ 
+1. **Absolute**: starts from the crate root, written with `crate::`. Example: `crate::auth::login::sign_in`.
+2. **Relative**: starts from the current module. Begins with an identifier, `self::` (current module), or `super::` (parent module). Example: `super::is_valid`.
+```rust title:"paths from src/auth/login.rs"
+// absolute: from the crate root
+crate::auth::session::start();
+ 
+// relative: super goes up one module (auth)
+super::is_valid("token");
+ 
+// relative: self is the current module (login)
+self::helper();
+```
+ 
+The diagram below shows where each keyword lands on the module tree when called from `login`:
+ 
+```mermaid
+graph TD
+    C["crate (lib.rs)"]
+    A["auth"]
+    L["login (we are here)"]
+    S["session"]
+    AV["is_valid()"]
+    LH["helper()"]
+    LSI["sign_in()"]
+    SS["start()"]
+ 
+    C --> A
+    A --> AV
+    A --> L
+    A --> S
+    L --> LSI
+    L --> LH
+    S --> SS
+ 
+    L -. "self::helper" .-> LH
+    L -. "super::is_valid" .-> AV
+    L -. "crate::auth::session::start" .-> SS
+```
+ 
+`self::` stays in place, `super::` climbs one level, `crate::` jumps to the root and walks down from there.
+ 
+### Use Keyword
+ 
+Typing full paths everywhere gets noisy. `use` brings items into scope so you can reference them by their last segment:
+ 
+```rust title:"use basics"
+use crate::auth::login;                  // bring the module into scope
+use crate::auth::session::Session;       // bring a type directly
+ 
+fn main() {
+    let token = login::sign_in("alice", "secret").unwrap();
+    let sess = Session::new(token);
+}
+```
+
+By convention we bring functions using their parent module (`login::sign_in()`) to make it obvious that it is an import, but for Types and Enums it is common to use them directly (`Session::new()`).
+
+ 
+```rust title:"use variants"
+// grouped imports
+use std::collections::{HashMap, HashSet};
+ 
+// alias to avoid name collisions
+use std::io::Result as IoResult;
+ 
+// glob, pulls in everything public, generally avoided 
+use crate::auth::*;
+```
+
+### API Flatten
+
+`pub use` is how libraries flatten their public API. Internal modules can be deeply nested but consumers will see a clean top-level surface, in other words the on-disk layout doesn't have to match the public API path:
+ 
+```rust title:"src/lib.rs"
+// internal modules, with nested submodules
+mod core;
+mod helpers;
+ 
+// re-export the items consumers actually need
+pub use crate::core::widgets::Button;
+pub use crate::core::widgets::TextInput;
+pub use crate::helpers::format_date;
+```
+ 
+Without the `pub use` re-exports, consumers would have to write the full internal path:
+ 
+```rust title:"without pub use"
+use mylib::core::widgets::Button;          // exposes internal layout
+use mylib::helpers::format_date;
+```
+ 
+With them, the consumer-facing API is flat:
+ 
+```rust title:"with pub use"
+use mylib::Button;                          // clean
+use mylib::format_date;
+```
+ 
+This is generally a good practice since it gives you the freedom to refactor the internals without breaking the consumers, for example moving `Button` type from `core::widgets` to `core::ui::elements` would remain invisible to consumers `mylib::Button` as long as the `pub use` still resolves correctly.
+ 
+## Questions
+ 
+Explain the components of Rust's module system.
+ 
+> [!answer]- Answer
+>
+> Four levels of organization. A **workspace** groups multiple packages. A **package** is a single Cargo project (`Cargo.toml` + source tree) and can contain at most one library crate plus any number of binary crates. A **crate** is the unit of compilation — it produces either an executable binary or a reusable library. A **module** is a namespace inside a crate that groups related items and controls their visibility. **Paths** (`crate::`, `self::`, `super::`, or names brought in via `use`) reference items across module boundaries.
+ 
+What is a crate? What are the two types?
+ 
+> [!answer]- Answer
+>
+> A crate is the unit of compilation in Rust, each crate produces exactly one artifact. **Binary crates** have a `main()` entry point and compile to an executable. **Library crates** have no entry point and compile to an `.rlib` for reuse by other crates as a dependency.
+ 
+What is a package? Show a minimal `Cargo.toml`.
+ 
+> [!answer]- Answer
+>
+> A package is a collection of one or more crates with a shared `Cargo.toml` declaring metadata and dependencies.
+>
+> ```toml
+> [package]
+> name = "my_project"
+> version = "0.1.0"
+> edition = "2021"
+>
+> [dependencies]
+> ```
+ 
+How many library and binary crates can a package contain?
+ 
+> [!answer]- Answer
+>
+> At most one library crate. Any number of binary crates. At least one of either is required.
+ 
+What is a library crate? How do you create one?
+ 
+> [!answer]- Answer
+>
+> A library crate is a reusable collection of items (functions, types, modules) with no entry point.
+
+Extend the `auth` module example with a new private helper function inside `login.rs` and a new public function in `session.rs` that calls it via `super::`
+
+> [!answer]- Answer
+>
+> ```rust title:"src/auth/login.rs"
+> pub fn sign_in(user: &str, password: &str) -> Result<String, String> {
+>     let normalized = normalize(user);    // private helper
+>     if password == "secret" {
+>         Ok(format!("token-for-{normalized}"))
+>     } else {
+>         Err(String::from("invalid credentials"))
+>     }
+> }
+>
+> // private to the `login` module
+> fn normalize(user: &str) -> String {
+>     user.trim().to_lowercase()
+> }
+> ```
+>
+> ```rust title:"src/auth/session.rs"
+> pub fn start_with_login(user: &str, password: &str) -> Result<(), String> {
+>     // super:: goes up to `auth`, then we descend into login::sign_in
+>     let token = super::login::sign_in(user, password)?;
+>     println!("session started with {token}");
+>     Ok(())
+> }
+> ```
+>
+> `super::login::sign_in` climbs from `session` up to `auth`, then back down into `login`.
+
+State if true or false:
+
+1. A package can contain only one binary crate = False, it can contain a lib crate and multiple bin.
+2. There can be multiple lib crates in a package = False, only one.
+3. A package can have one library but no binary = True, a library only package is valid.
+4. Functions defined in a private module are not accessible from outside the module = True, a private module gates everything, regardless of its inner pub elements.
+5. A private function in a public module can be accessed from other modules within the project = False, a public module might be exposed publicaly but unless they add `pub` its elements remain private by default.
+
+
+
+
 
 # Errors
 

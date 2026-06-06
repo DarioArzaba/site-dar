@@ -96,6 +96,10 @@
 /* ── Reset & base ────────────────────────────────────────── */
 * { box-sizing: border-box; }
 
+/* Offset in-page anchor jumps (TOC, hash links, heading anchors) so the
+   fixed navbar doesn't obscure the target heading and the line beneath it */
+html { scroll-padding-top: calc(var(--nav-h) + var(--size-3)); }
+
 body {
   margin: 0;
   background: var(--bg);
